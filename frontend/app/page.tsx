@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -77,12 +78,28 @@ export default function HomePage() {
             </Link>
             <Link
               href="/register"
-              className="bg-primary-container text-on-primary-container font-label-md px-6 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+              className="hidden md:block bg-primary-container text-on-primary-container font-label-md px-6 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
             >
               Schedule Pickup
             </Link>
+            <button className="md:hidden text-primary p-2 flex items-center justify-center" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              <span className="material-symbols-outlined text-3xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
+            </button>
           </div>
         </div>
+        
+        {/* Mobile Menu Overlay */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-[100%] left-0 w-full bg-surface shadow-md py-6 flex flex-col items-center gap-6 border-t border-outline-variant/20">
+             <Link href="/services" className="font-label-lg text-primary font-bold" onClick={() => setMobileMenuOpen(false)}>Services</Link>
+             <a href="#how-it-works" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>How it Works</a>
+             <a href="#pricing" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+             <a href="#testimonials" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Testimonials</a>
+             <div className="w-10/12 h-px bg-outline-variant/30 my-2"></div>
+             <Link href="/login" className="font-label-lg text-primary" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
+             <Link href="/register" className="bg-primary text-white font-label-lg px-8 py-4 rounded-xl shadow-sm w-10/12 text-center font-bold" onClick={() => setMobileMenuOpen(false)}>Schedule Pickup</Link>
+          </div>
+        )}
       </nav>
 
       {/* ─── Hero ─── */}
@@ -452,7 +469,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="flex md:grid md:grid-cols-2 gap-8 overflow-x-auto snap-x snap-mandatory pb-4 md:pb-0 no-scrollbar items-stretch">
             {[
               {
                 icon: "eco",
@@ -477,7 +494,7 @@ export default function HomePage() {
             ].map(({ icon, title, desc }) => (
               <div
                 key={title}
-                className="bg-white p-8 rounded-2xl zero-gravity-shadow border border-outline-variant/20 flex gap-6 items-start group"
+                className="bg-white p-8 rounded-2xl zero-gravity-shadow border border-outline-variant/20 flex flex-col sm:flex-row gap-6 items-start group min-w-[300px] snap-center md:min-w-0"
               >
                 <div className="bg-primary-container/10 p-4 rounded-xl text-primary group-hover:bg-primary group-hover:text-white transition-colors duration-300 flex-shrink-0">
                   <span className="material-symbols-outlined text-[32px]">{icon}</span>
@@ -516,7 +533,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="flex md:grid md:grid-cols-3 gap-8 overflow-x-auto snap-x snap-mandatory pb-4 md:pb-0 no-scrollbar">
             {[
               {
                 initials: "SC",
@@ -539,7 +556,7 @@ export default function HomePage() {
             ].map(({ initials, name, role, text }) => (
               <div
                 key={name}
-                className="p-8 bg-surface-container-low rounded-xl border border-transparent hover:border-primary/10 transition-all"
+                className="p-8 bg-surface-container-low rounded-xl border border-transparent hover:border-primary/10 transition-all min-w-[320px] snap-center md:min-w-0"
               >
                 <div className="flex gap-1 mb-6 text-primary-container">
                   {[1, 2, 3, 4, 5].map((i) => (
