@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -131,7 +131,7 @@ const CLOTHING_ICONS: Record<string, string> = {
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
-export default function ServicesPage() {
+function ServicesContent() {
   const searchParams = useSearchParams();
   const serviceParam = searchParams.get("service");
   const initialService = SERVICES.find(s => s.id === serviceParam) || SERVICES[0];
@@ -473,5 +473,13 @@ export default function ServicesPage() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function ServicesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-primary font-bold text-xl">Loading...</div>}>
+      <ServicesContent />
+    </Suspense>
   );
 }
