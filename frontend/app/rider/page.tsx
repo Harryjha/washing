@@ -28,7 +28,7 @@ export default function RiderDashboard() {
     }
   };
 
-  const updateStatus = async (id, status) => {
+  const updateStatus = async (id: number | string, status: string) => {
     const res = await fetch(`http://localhost:5000/api/orders/${id}/status`, {
       method: "PUT",
       headers: { 
