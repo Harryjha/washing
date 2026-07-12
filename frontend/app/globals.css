@@ -1,0 +1,241 @@
+@import "tailwindcss";
+
+@theme {
+  /* Custom color palette */
+  --color-outline: #6e7980;
+  --color-background: #f7f9fb;
+  --color-secondary-container: #93bdff;
+  --color-surface-container: #eceef0;
+  --color-on-tertiary-container: #711c00;
+  --color-surface-container-high: #e6e8ea;
+  --color-surface-container-highest: #e0e3e5;
+  --color-inverse-primary: #77d1ff;
+  --color-on-tertiary: #ffffff;
+  --color-on-surface-variant: #3e484f;
+  --color-on-tertiary-fixed-variant: #862300;
+  --color-surface-container-low: #f2f4f6;
+  --color-secondary-fixed: #d5e3ff;
+  --color-primary-container: #2bb1e7;
+  --color-on-error-container: #93000a;
+  --color-primary: #006689;
+  --color-on-primary: #ffffff;
+  --color-on-secondary-container: #194b86;
+  --color-surface: #f7f9fb;
+  --color-on-background: #191c1e;
+  --color-on-error: #ffffff;
+  --color-on-primary-container: #004057;
+  --color-secondary: #325f9b;
+  --color-on-primary-fixed-variant: #004d68;
+  --color-tertiary: #af3100;
+  --color-primary-fixed-dim: #77d1ff;
+  --color-on-secondary-fixed-variant: #124782;
+  --color-tertiary-container: #ff815a;
+  --color-surface-bright: #f7f9fb;
+  --color-surface-container-lowest: #ffffff;
+  --color-on-secondary-fixed: #001c3b;
+  --color-inverse-on-surface: #eff1f3;
+  --color-surface-variant: #e0e3e5;
+  --color-surface-dim: #d8dadc;
+  --color-tertiary-fixed: #ffdbd1;
+  --color-outline-variant: #bdc8d0;
+  --color-on-primary-fixed: #001e2c;
+  --color-on-tertiary-fixed: #3a0a00;
+  --color-inverse-surface: #2d3133;
+  --color-error: #ba1a1a;
+  --color-on-secondary: #ffffff;
+  --color-primary-fixed: #c2e8ff;
+  --color-tertiary-fixed-dim: #ffb59f;
+  --color-error-container: #ffdad6;
+  --color-surface-tint: #006689;
+  --color-on-surface: #191c1e;
+  --color-secondary-fixed-dim: #a7c8ff;
+  --color-accent-gold: #ff815a;
+
+  /* Custom spacing */
+  --spacing-section-padding-desktop: 80px;
+
+  /* Custom fonts */
+  --font-display-lg: "Hanken Grotesk", sans-serif;
+  --font-label-sm: "Hanken Grotesk", sans-serif;
+  --font-body-lg: "Hanken Grotesk", sans-serif;
+  --font-title-md: "Hanken Grotesk", sans-serif;
+  --font-headline-lg: "Hanken Grotesk", sans-serif;
+  --font-label-md: "Hanken Grotesk", sans-serif;
+  --font-body-md: "Hanken Grotesk", sans-serif;
+}
+
+/* Legacy CSS variables for backward compatibility */
+:root {
+  --primary: #4F46E5;
+  --primary-hover: #4338CA;
+  --bg-color: #F3F4F6;
+  --surface: rgba(255, 255, 255, 0.7);
+  --surface-border: rgba(255, 255, 255, 0.5);
+  --text-main: #111827;
+  --text-muted: #6B7280;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --danger: #EF4444;
+  --font-main: 'Inter', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Hanken Grotesk", 'Inter', sans-serif;
+  background: #f7f9fb;
+  color: #191c1e;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.glass-panel {
+  background: var(--surface);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--surface-border);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.1);
+  padding: 2rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.input-field {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.input-field:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.2);
+}
+
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--text-main);
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+  width: 100%;
+}
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.nav-brand {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.order-card {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  border: 1px solid #E5E7EB;
+  transition: transform 0.2s;
+}
+.order-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.badge.pending { background: #FEF3C7; color: #D97706; }
+.badge.in-progress { background: #DBEAFE; color: #2563EB; }
+.badge.delivered { background: #D1FAE5; color: #059669; }
+
+/* Material symbols */
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+/* Premium card shadows */
+.zero-gravity-shadow {
+  box-shadow: 0 10px 30px -10px rgba(0, 102, 137, 0.1);
+  transition: all 0.3s ease-in-out;
+}
+.zero-gravity-shadow:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 25px 50px -12px rgba(0, 102, 137, 0.2);
+}
+
+.pricing-card-header {
+  border-radius: 0.75rem 0.75rem 0 0;
+  padding: 2.5rem 1rem 1.75rem;
+}
+
+.popular-badge {
+  position: absolute;
+  top: 20px;
+  right: -35px;
+  background: #ff815a;
+  color: #ffffff;
+  padding: 8px 40px;
+  transform: rotate(45deg);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  z-index: 10;
+}
+
+.premium-glow:hover {
+  box-shadow: 0 0 20px 2px rgba(43, 177, 231, 0.3);
+}
+
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
