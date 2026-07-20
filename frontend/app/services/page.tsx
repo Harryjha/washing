@@ -8,25 +8,26 @@ import Link from "next/link";
 const SERVICES = [
   {
     id: "wash-and-fold",
-    label: "Wash And Fold",
+    label: "Wash & Fold",
     icon: "local_laundry_service",
     color: "bg-primary-container",
     textColor: "text-on-primary-container",
     accentColor: "text-primary",
     borderColor: "border-primary",
     bgAccent: "bg-primary",
-    price: "₹80",
+    price: "₹79",
     unit: "/ KG",
     delivery: "1 Day",
     badge: "bg-primary-fixed/30 text-on-primary-fixed",
     description: "Professional laundry service cleaned to perfection for your daily essentials. We sort, wash, dry, and neatly fold your clothes back into shape.",
     features: ["Expert Sorting", "Premium Detergents", "Neat Folding", "Fabric Care Check"],
     featureIcon: "check_circle",
-    clothingTypes: ["T-Shirts", "Shirts", "Trousers", "Jeans", "Undergarments", "Socks", "Shorts", "Sarees", "Kurtas", "Kids Clothes"],
+    clothingTypes: ["T-Shirts", "Shirts", "Trousers", "Jeans", "Undergarments", "Socks", "Shorts", "Sarees", "Kurtas", "Shoes"],
+    minBilling: "Rs 349",
   },
   {
     id: "wash-and-ironing",
-    label: "Wash And Ironing",
+    label: "Wash & Iron",
     icon: "iron",
     color: "bg-secondary",
     textColor: "text-on-secondary",
@@ -38,7 +39,8 @@ const SERVICES = [
     delivery: "2 Days",
     badge: "bg-secondary-fixed/50 text-on-secondary-fixed-variant",
     description: "Expertly washed and precision steam-pressed for a crisp, professional finish. Perfect for office wear and formal clothing.",
-    features: ["Steam Ironing", "Hanger Service", "Stain Removal", "Crease-Free Guarantee"],
+    features: ["Steam Ironing", "Stain Removal", "Crease-Free Guarantee"],
+    minBilling: "Rs 349",
     featureIcon: "check_circle",
     clothingTypes: ["Formal Shirts", "Dress Pants", "Blazers", "Sarees", "Kurtas", "School Uniforms", "Suits", "Ethnic Wear"],
   },
@@ -59,6 +61,7 @@ const SERVICES = [
     features: ["Individual Protection", "Individual Packing", "Priority Pickup", "Same-Day Delivery"],
     featureIcon: "verified",
     clothingTypes: ["Designer Wear", "Silk Garments", "Cashmere", "Formal Suits", "Wedding Clothes", "Embroidered Wear", "Linen Shirts"],
+    minBilling: "Rs 349",
   },
   {
     id: "dry-cleaning",
@@ -69,14 +72,15 @@ const SERVICES = [
     accentColor: "text-tertiary",
     borderColor: "border-tertiary",
     bgAccent: "bg-tertiary",
-    price: "₹99",
+    price: "From ₹119",
     unit: "/ ITEM",
     delivery: "4 Days",
     badge: "bg-tertiary/10 text-tertiary",
-    description: "Specialized solvent-based cleaning for delicate fabrics that cannot be washed with water. Ideal for designer garments and luxury fabrics.",
-    features: ["Eco-friendly Solvents", "Designer Garment Care", "Premium Finishing", "Fabric Analysis"],
+    description: "Specialized waterless solvent cleaning for delicate fabrics. Ideal for designer garments and luxury fabrics. 4 Days (Excluding Pickup day).",
+    features: ["Waterless Solvent", "Designer Garment Care", "Premium Finishing", "Fabric Analysis"],
     featureIcon: "spa",
-    clothingTypes: ["Woolen Coats", "Leather Jackets", "Silk Dresses", "Bridal Wear", "Suits & Blazers", "Ties & Scarves", "Embroidered Clothes"],
+    clothingTypes: [],
+    minBilling: "Rs 349",
   },
   {
     id: "household-laundry",
@@ -95,6 +99,7 @@ const SERVICES = [
     features: ["Duvets & Blankets", "Bedsheets & Pillows", "Deep Sanitization", "Anti-allergen Wash"],
     featureIcon: "home",
     clothingTypes: ["Duvets", "Blankets", "Bed Sheets", "Pillow Covers", "Curtains", "Sofa Covers", "Table Covers", "Towels"],
+    minBilling: "Rs 349",
   },
   {
     id: "express-service",
@@ -113,6 +118,7 @@ const SERVICES = [
     features: ["Super Fast Processing", "Express Delivery", "Guaranteed Quality", "Priority Handling"],
     featureIcon: "bolt",
     clothingTypes: ["T-Shirts", "Shirts", "Trousers", "Jeans", "Ethnic Wear", "Sarees", "Formal Wear"],
+    minBilling: "Rs 599",
   },
 ];
 
@@ -127,8 +133,73 @@ const CLOTHING_ICONS: Record<string, string> = {
   "Silk Dresses": "checkroom", "Bridal Wear": "favorite", "Ties & Scarves": "checkroom",
   "Embroidered Clothes": "auto_awesome", "Duvets": "bed", "Blankets": "bed", "Bed Sheets": "bed",
   "Pillow Covers": "bed", "Curtains": "curtains", "Sofa Covers": "weekend", "Table Covers": "table_restaurant",
-  "Towels": "dry", "Suits & Blazers": "checkroom",
+  "Towels": "dry", "Suits & Blazers": "checkroom", "Shoes": "footprint",
 };
+
+// ─── Dry Cleaning Sub-Categories ──────────────────────────────────────────────
+const DRY_CLEANING_CATEGORIES = {
+  mens: [
+    { name: "Shirt/T-shirt", price: 119 },
+    { name: "Trouser/Jeans", price: 119 },
+    { name: "Suit (2 Pcs - Blazer & Trouser)", price: 349 },
+    { name: "Suit (3 Pcs - Blazer, Trouser & Shirt)", price: 399 },
+    { name: "Kurta", price: 149 },
+    { name: "Kurta (Fancy)", price: 199 },
+    { name: "Sherwani", price: 600 },
+    { name: "Payjama", price: 119 },
+    { name: "Coat", price: 300 },
+    { name: "Jacket/Blazer", price: 299 },
+    { name: "Waist Coat/Half Coat", price: 199 },
+    { name: "Overcoat", price: 350 },
+    { name: "Leather Jacket", price: 500 },
+    { name: "Sweater/Pullover", price: 199 },
+    { name: "Dhoti", price: 250 },
+  ],
+  womens: [
+    { name: "Top/Bottom (Light)", price: 149 },
+    { name: "Lehenga (Plain)", price: 350 },
+    { name: "Lehenga (Heavy)", price: 750 },
+    { name: "Saree (Cotton)", price: 249 },
+    { name: "Saree (Silk)", price: 299 },
+    { name: "Saree (Fancy)", price: 350 },
+    { name: "Skirt", price: 130 },
+    { name: "Blouse", price: 149 },
+    { name: "Blouse (Fancy)", price: 200 },
+    { name: "Long Dress/Jump Suit", price: 300 },
+    { name: "Shawl", price: 150 },
+    { name: "Gown", price: 500 },
+    { name: "Jacket/Blazer", price: 299 },
+    { name: "Waist Coat/Half Coat", price: 199 },
+    { name: "Overcoat", price: 350 },
+    { name: "Leather Jacket", price: 500 },
+    { name: "Sweater/Pullover", price: 199 },
+    { name: "Kurta", price: 149 },
+    { name: "Kurta (Fancy)", price: 199 },
+    { name: "Dupatta", price: 149 },
+    { name: "Dupatta (Fancy)", price: 200 },
+  ],
+  others: [
+    { name: "Blanket/Quilt/Comforter (Single)", price: 300, unit: "/item" },
+    { name: "Blanket/Quilt/Comforter (Double)", price: 399, unit: "/item" },
+    { name: "Bed Sheet (Single)", price: 150, unit: "/item" },
+    { name: "Bed Sheet (Double)", price: 200, unit: "/item" },
+    { name: "Door Mat", price: 150, unit: "/item" },
+    { name: "Sofa Cover", price: 150, unit: "/item" },
+    { name: "Shoes", price: 450, unit: "/pair" },
+    { name: "Crocks", price: 300, unit: "/pair" },
+    { name: "Pillow", price: 199, unit: "/item" },
+    { name: "Pillow Cover", price: 99, unit: "/item" },
+    { name: "Cap", price: 50, unit: "/item" },
+    { name: "Curtains (Single Layer)", price: 8, unit: "/sqft" },
+    { name: "Curtains (Double Layer)", price: 15, unit: "/sqft" },
+    { name: "Carpet", price: 40, unit: "/sqft" },
+    { name: "Teddy", price: 250, unit: "/feet" },
+    { name: "Shoulder Bag/Ladies Purse", price: 400, unit: "/item" },
+    { name: "Trolly Bag/Bags", price: 450, unit: "/item" },
+  ],
+} as const;
+
+type DryCleaningTab = "mens" | "womens" | "others";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 function ServicesContent() {
@@ -142,6 +213,7 @@ function ServicesContent() {
   const [address, setAddress] = useState("");
   const [specialNote, setSpecialNote] = useState("");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
+  const [dryCleaningTab, setDryCleaningTab] = useState<DryCleaningTab>("mens");
 
   // Update active service if URL changes
   useEffect(() => {
@@ -196,7 +268,7 @@ function ServicesContent() {
       <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
         <div className="flex justify-between items-center px-6 py-4 max-w-[1200px] mx-auto">
           <Link href="/" className="flex items-center">
-            <img src="/brand-logo.png" alt="Washington Laundrettes" className="h-[48px] md:h-[60px] w-auto max-w-[280px] object-contain object-left" />
+            <img src="/Logo.png" alt="Washington Laundrettes" className="h-[64px] md:h-[80px] w-auto max-w-[320px] object-contain object-left" />
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="/services" className="text-primary font-bold border-b-2 border-primary pb-1">Services</Link>
@@ -297,6 +369,11 @@ function ServicesContent() {
                   <div className={`mt-3 text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full ${activeService.badge}`}>
                     Delivery: {activeService.delivery}
                   </div>
+                  {(activeService as any).minBilling && (
+                    <div className="mt-2 text-[10px] font-bold text-outline border border-outline-variant/40 rounded-full px-2 py-0.5">
+                      Min. billing: {(activeService as any).minBilling}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -328,6 +405,76 @@ function ServicesContent() {
                   )}
                 </div>
 
+                {/* ── Dry Cleaning: sub-tabs ── */}
+                {activeService.id === "dry-cleaning" ? (
+                  <div>
+                    {/* Sub-tab selector */}
+                    <div className="flex gap-2 mb-6 bg-surface-container-low rounded-2xl p-1.5 w-fit">
+                      {(["mens", "womens", "others"] as DryCleaningTab[]).map((tab) => (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => { setDryCleaningTab(tab); setSelectedClothes({}); }}
+                          className={`px-6 py-2.5 rounded-xl font-bold text-sm transition-all duration-200 ${dryCleaningTab === tab
+                            ? "bg-tertiary text-white shadow-md"
+                            : "text-on-surface-variant hover:text-on-surface"}`}
+                        >
+                          {tab === "mens" ? "Men's" : tab === "womens" ? "Women's" : "Others"}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Info banner */}
+                    <div className="flex flex-wrap gap-3 mb-6">
+                      <span className="bg-blue-50 text-blue-700 border border-blue-200 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest">Waterless Solvent</span>
+                      <span className="bg-surface-container-low text-on-surface-variant rounded-full px-4 py-1.5 text-xs font-bold">4 Days (Excluding Pickup day)</span>
+                      <span className="bg-tertiary/10 text-tertiary rounded-full px-4 py-1.5 text-xs font-bold">Min. billing: Rs 349</span>
+                    </div>
+
+                    {/* Price list */}
+                    <div className="bg-white rounded-2xl border border-outline-variant/30 overflow-hidden shadow-sm">
+                      <div className="px-6 py-4 border-b border-outline-variant/20 bg-surface-container-low flex justify-between text-xs font-bold text-on-surface-variant uppercase tracking-widest">
+                        <span>Item</span>
+                        <span>Price</span>
+                      </div>
+                      <div className="divide-y divide-outline-variant/15">
+                        {DRY_CLEANING_CATEGORIES[dryCleaningTab].map((item) => {
+                          const isSelected = !!selectedClothes[item.name];
+                          const count = selectedClothes[item.name] || 0;
+                          return (
+                            <div
+                              key={item.name}
+                              className={`flex items-center gap-4 px-6 py-4 cursor-pointer transition-colors duration-150 ${isSelected ? "bg-tertiary/5" : "hover:bg-surface-container-low"}`}
+                              onClick={() => toggleCloth(item.name)}
+                            >
+                              {/* Checkbox circle */}
+                              <div className={`flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? "bg-tertiary border-tertiary" : "border-outline-variant"}`}>
+                                {isSelected && <span className="material-symbols-outlined text-white text-[12px]">check</span>}
+                              </div>
+
+                              {/* Item name */}
+                              <span className={`flex-1 font-medium text-sm ${isSelected ? "text-tertiary font-bold" : "text-on-surface"}`}>{item.name}</span>
+
+                              {/* Counter (when selected) */}
+                              {isSelected && (
+                                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                                  <button type="button" onClick={() => updateCount(item.name, -1)} className="w-7 h-7 rounded-full bg-white border border-outline-variant flex items-center justify-center font-bold text-lg leading-none hover:bg-surface-container-low transition-colors">−</button>
+                                  <span className="font-black text-base text-tertiary w-5 text-center">{count}</span>
+                                  <button type="button" onClick={() => updateCount(item.name, 1)} className="w-7 h-7 rounded-full bg-tertiary text-white flex items-center justify-center font-bold text-lg leading-none hover:opacity-90 transition-colors">+</button>
+                                </div>
+                              )}
+
+                              {/* Price */}
+                              <span className={`flex-shrink-0 font-bold text-sm text-right min-w-[80px] ${isSelected ? "text-tertiary" : "text-on-surface"}`}>
+                                ₹{item.price}{(item as any).unit ? <span className="font-normal text-on-surface-variant text-xs">{(item as any).unit}</span> : ""}
+                              </span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                   {activeService.clothingTypes.map((cloth) => {
                     const isSelected = !!selectedClothes[cloth];
@@ -373,6 +520,7 @@ function ServicesContent() {
                     );
                   })}
                 </div>
+                )}
               </div>
 
               {/* Step 2 — Pickup Details */}
@@ -429,19 +577,40 @@ function ServicesContent() {
                     <span className="material-symbols-outlined text-primary">receipt_long</span> Order Summary
                   </h3>
                   <div className="space-y-2 mb-6">
-                    {Object.entries(selectedClothes).map(([cloth, count]) => (
-                      <div key={cloth} className="flex justify-between text-sm">
-                        <span className="text-on-surface-variant">{cloth}</span>
-                        <span className={`font-bold ${activeService.accentColor}`}>× {count}</span>
-                      </div>
-                    ))}
+                    {Object.entries(selectedClothes).map(([cloth, count]) => {
+                      // For dry cleaning, look up per-item price
+                      const dcItem = activeService.id === "dry-cleaning"
+                        ? DRY_CLEANING_CATEGORIES[dryCleaningTab].find(i => i.name === cloth)
+                        : null;
+                      return (
+                        <div key={cloth} className="flex justify-between text-sm">
+                          <span className="text-on-surface-variant">{cloth} × {count}</span>
+                          {dcItem
+                            ? <span className={`font-bold ${activeService.accentColor}`}>₹{dcItem.price * count}</span>
+                            : <span className={`font-bold ${activeService.accentColor}`}>× {count}</span>
+                          }
+                        </div>
+                      );
+                    })}
+                    {activeService.id === "dry-cleaning" && (() => {
+                      const total = Object.entries(selectedClothes).reduce((sum, [cloth, count]) => {
+                        const item = DRY_CLEANING_CATEGORIES[dryCleaningTab].find(i => i.name === cloth);
+                        return sum + (item ? item.price * count : 0);
+                      }, 0);
+                      return total > 0 ? (
+                        <div className="border-t border-outline-variant/30 pt-3 mt-3 flex justify-between font-bold">
+                          <span>Estimated Total</span>
+                          <span className="text-tertiary">₹{Math.max(total, 349)}{total < 349 ? " (min. Rs 349)" : ""}</span>
+                        </div>
+                      ) : null;
+                    })()}
                     <div className="border-t border-outline-variant/30 pt-3 mt-3 flex justify-between font-bold">
                       <span>Total Items</span>
                       <span className={activeService.accentColor}>{totalItems} pieces</span>
                     </div>
                     <div className="flex justify-between text-sm text-on-surface-variant">
                       <span>Service</span>
-                      <span className="font-semibold">{activeService.label} — {activeService.price} {activeService.unit}</span>
+                      <span className="font-semibold">{activeService.label}{activeService.id === "dry-cleaning" ? ` — ${dryCleaningTab === "mens" ? "Men's" : dryCleaningTab === "womens" ? "Women's" : "Others"}` : ` — ${activeService.price} ${activeService.unit}`}</span>
                     </div>
                     <div className="flex justify-between text-sm text-on-surface-variant">
                       <span>Estimated Delivery</span>

@@ -40,7 +40,7 @@ export default function HomePage() {
         <div className="max-w-[1200px] mx-auto flex justify-between items-center px-6 h-full">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center">
-              <img src="/brand-logo.png" alt="Washington Laundrettes" className="h-[48px] md:h-[60px] w-auto max-w-[280px] object-contain object-left" />
+              <img src="/Logo.png" alt="Washington Laundrettes" className="h-[64px] md:h-[80px] w-auto max-w-[320px] object-contain object-left" />
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <Link
@@ -87,32 +87,32 @@ export default function HomePage() {
             </button>
           </div>
         </div>
-        
+
         {/* Mobile Menu Overlay */}
         {mobileMenuOpen && (
           <div className="md:hidden absolute top-[100%] left-0 w-full bg-surface shadow-md py-6 flex flex-col items-center gap-6 border-t border-outline-variant/20">
-             <Link href="/services" className="font-label-lg text-primary font-bold" onClick={() => setMobileMenuOpen(false)}>Services</Link>
-             <a href="#how-it-works" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>How it Works</a>
-             <a href="#pricing" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
-             <a href="#testimonials" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Testimonials</a>
-             <div className="w-10/12 h-px bg-outline-variant/30 my-2"></div>
-             <Link href="/login" className="font-label-lg text-primary" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
-             <Link href="/register" className="bg-primary text-white font-label-lg px-8 py-4 rounded-xl shadow-sm w-10/12 text-center font-bold" onClick={() => setMobileMenuOpen(false)}>Schedule Pickup</Link>
+            <Link href="/services" className="font-label-lg text-primary font-bold" onClick={() => setMobileMenuOpen(false)}>Services</Link>
+            <a href="#how-it-works" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>How it Works</a>
+            <a href="#pricing" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
+            <a href="#testimonials" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Testimonials</a>
+            <div className="w-10/12 h-px bg-outline-variant/30 my-2"></div>
+            <Link href="/login" className="font-label-lg text-primary" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
+            <Link href="/register" className="bg-primary text-white font-label-lg px-8 py-4 rounded-xl shadow-sm w-10/12 text-center font-bold" onClick={() => setMobileMenuOpen(false)}>Schedule Pickup</Link>
           </div>
         )}
       </nav>
 
       {/* ─── Hero ─── */}
       <header className="relative overflow-hidden bg-surface">
-        <div className="relative min-h-[600px] flex items-center">
+        <div className="relative min-h-screen flex items-center">
           {/* Background image */}
           <div className="absolute inset-0 z-0">
             <img
               alt="Laundry background"
-              className="w-full h-full object-cover"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuCMfNRsCkjfh6fl3ZFqCnfG_jV5l5sLnGiCCjPFv9z1XA6Lw2R8LKmViAfM4s-9kpyuT6mcVnUnTP4705wUXnwX94umyv21GSbiN71wgT-axAicfp0UeuvIoJQryL8dGS-JCdtc00BFVCYVBuDPujKbCGOT9ZrmYIzwzVQddGiTpmlgVNDhEls_ZeNyzLc4K45mLiyKcRKNEV5eN23PJ-1GUpg9uq87WinX8lsRo36efzIBbVoNJCzLmPu1Q9B6kpYsOqTjtUJYN-w"
+              className="w-full h-full object-cover object-center"
+              src="/colour.png"
             />
-            <div className="absolute inset-0 bg-black/30" />
+            <div className="absolute inset-0 bg-black/40" />
           </div>
 
           {/* Hero content */}
@@ -128,8 +128,8 @@ export default function HomePage() {
               </h1>
 
               <p className="text-xl md:text-2xl font-bold uppercase flex flex-wrap gap-x-2">
-                <span style={{ color: "rgb(76, 175, 80)" }}>WASH,</span>
-                <span style={{ color: "rgb(156, 39, 176)" }}>DRY,</span>
+                <span style={{ color: "rgb(0, 0, 139)" }}>WASH,</span>
+                <span style={{ color: "rgb(174, 45, 197)" }}>DRY,</span>
                 <span style={{ color: "rgb(233, 30, 99)" }}>FOLD,</span>
                 <span style={{ color: "rgb(255, 87, 34)" }}>STEAMPRESS.</span>
               </p>
@@ -184,16 +184,16 @@ export default function HomePage() {
               {/* Most Popular ribbon */}
               <div className="popular-badge" style={{ background: '#006689' }}>MOST POPULAR</div>
               <div className="pricing-card-header bg-primary text-center text-white">
-                <h3 className="text-2xl tracking-wide uppercase font-extrabold">WASH AND FOLD</h3>
+                <h3 className="text-2xl tracking-wide uppercase font-extrabold">WASH &amp; FOLD</h3>
                 <p className="text-xs text-white/70 mt-1 tracking-widest uppercase">Includes: Wash + Dry + Fold</p>
               </div>
               <div className="p-8 flex flex-col flex-grow items-center text-center space-y-5">
                 <div className="relative -mt-14 bg-white rounded-full px-8 py-3 shadow-xl border border-primary/10">
-                  <span className="text-primary font-black text-4xl">₹80</span>
+                  <span className="text-primary font-black text-4xl">₹79</span>
                   <span className="text-on-surface-variant text-sm font-bold uppercase ml-1">/ KG</span>
                 </div>
                 <div className="bg-primary/10 rounded-full px-6 py-1.5 text-primary text-xs font-bold uppercase tracking-widest border border-primary/20">
-                  Minimum Billing: Only ₹80/kg
+                  Minimum Billing: Rs 349
                 </div>
                 <div className="bg-surface-variant/50 rounded-full px-6 py-1.5 text-on-surface-variant text-xs font-bold uppercase tracking-widest">
                   Delivery — Within 24 Hours
@@ -213,7 +213,7 @@ export default function HomePage() {
             <div className="relative bg-white rounded-2xl overflow-hidden flex flex-col zero-gravity-shadow border-2 border-secondary snap-center min-w-[300px] md:min-w-0">
               <div className="popular-badge" style={{ background: '#325f9b' }}>MOST POPULAR</div>
               <div className="pricing-card-header bg-secondary text-center text-white">
-                <h3 className="text-2xl tracking-wide uppercase font-extrabold">WASH AND IRONING</h3>
+                <h3 className="text-2xl tracking-wide uppercase font-extrabold">WASH &amp; IRON</h3>
                 <p className="text-xs text-white/70 mt-1 tracking-widest uppercase">Includes: Wash + Dry + Ironing</p>
               </div>
               <div className="p-8 flex flex-col flex-grow items-center text-center space-y-5">
@@ -222,10 +222,13 @@ export default function HomePage() {
                   <span className="text-on-surface-variant text-sm font-bold uppercase ml-1">/ KG</span>
                 </div>
                 <div className="bg-secondary-fixed rounded-full px-6 py-1.5 text-secondary font-bold uppercase tracking-widest text-xs">
+                  Minimum Billing: Rs 349
+                </div>
+                <div className="bg-surface-variant/50 rounded-full px-6 py-1.5 text-on-surface-variant text-xs font-bold uppercase tracking-widest">
                   Delivery — 2 Days
                 </div>
                 <ul className="text-on-surface-variant text-base space-y-3 w-full">
-                  {[["iron", "Steam Ironing"], ["dry_cleaning", "Hanger Service"], ["clean_hands", "Stain Removal"], ["local_laundry_service", "Fabric Softener"], ["verified", "Quality Check"]].map(([icon, label]) => (
+                  {[["iron", "Steam Ironing"], ["clean_hands", "Stain Removal"], ["local_laundry_service", "Fabric Softener"], ["verified", "Quality Check"]].map(([icon, label]) => (
                     <li key={label} className="flex items-center justify-center gap-2">
                       <span className="material-symbols-outlined text-secondary text-lg">{icon}</span>{label}
                     </li>
@@ -245,6 +248,9 @@ export default function HomePage() {
                 <div className="relative -mt-14 bg-white rounded-full px-8 py-3 shadow-xl border border-tertiary/20">
                   <span className="text-tertiary font-black text-4xl">₹99</span>
                   <span className="text-on-surface-variant text-sm font-bold uppercase ml-1">/ ITEM</span>
+                </div>
+                <div className="bg-primary/10 rounded-full px-6 py-1.5 text-primary text-xs font-bold uppercase tracking-widest border border-primary/20">
+                  Minimum Billing: Rs 349
                 </div>
                 <div className="bg-tertiary-fixed rounded-full px-6 py-1.5 text-on-tertiary-fixed-variant text-xs font-bold uppercase tracking-widest">
                   Delivery — 4 Days
@@ -270,6 +276,9 @@ export default function HomePage() {
                   <span className="text-primary font-black text-4xl">₹199</span>
                   <span className="text-on-surface-variant text-sm font-bold uppercase ml-1">/ KG</span>
                 </div>
+                <div className="bg-primary/10 rounded-full px-6 py-1.5 text-primary text-xs font-bold uppercase tracking-widest border border-primary/20">
+                  Minimum Billing: Rs 349
+                </div>
                 <div className="bg-primary text-white rounded-full px-6 py-1.5 text-xs font-bold uppercase tracking-widest animate-pulse">
                   Delivery — Same Day
                 </div>
@@ -294,6 +303,7 @@ export default function HomePage() {
                   <span className="text-primary font-black text-4xl">₹169</span>
                   <span className="text-on-surface-variant text-sm font-bold uppercase ml-1">/ ITEM</span>
                 </div>
+                <div className="bg-primary/10 rounded-full px-6 py-1.5 text-primary text-xs font-bold uppercase tracking-widest border border-primary/20">Minimum Billing: Rs 349</div>
                 <div className="bg-primary-fixed-dim rounded-full px-6 py-1.5 text-on-primary-fixed-variant text-xs font-bold uppercase tracking-widest">Standard Delivery</div>
                 <ul className="text-on-surface-variant text-base space-y-3 w-full">
                   {[["bed", "Duvets & Blankets"], ["window", "Bedsheets & Pillows"], ["sanitizer", "Deep Sanitization"], ["local_laundry_service", "Anti-Allergen Wash"], ["verified", "Quality Check"]].map(([icon, label]) => (
@@ -316,6 +326,7 @@ export default function HomePage() {
                   <span className="text-primary font-black text-4xl">₹249</span>
                   <span className="text-on-surface-variant text-sm font-bold uppercase ml-1">/ KG</span>
                 </div>
+                <div className="bg-primary/10 rounded-full px-6 py-1.5 text-primary text-xs font-bold uppercase tracking-widest border border-primary/20">Minimum Billing: Rs 599</div>
                 <div className="bg-secondary-container rounded-full px-6 py-1.5 text-on-secondary-container text-xs font-bold uppercase tracking-widest">Delivery — 6 Hours</div>
                 <ul className="text-on-surface-variant text-base space-y-3 w-full">
                   {[["bolt", "Super Fast Processing"], ["local_shipping", "Express Delivery"], ["verified_user", "Guaranteed Quality"], ["priority_high", "Priority Handling"], ["schedule", "6-Hour Turnaround"]].map(([icon, label]) => (
@@ -343,7 +354,7 @@ export default function HomePage() {
           <div className="relative group">
             <div className="flex overflow-x-auto gap-6 pb-8 no-scrollbar snap-x snap-mandatory scroll-smooth">
               {[
-                { label: "TOYS", icon: "toys" },
+                { label: "SHOES", icon: "footprint" },
                 { label: "COATS", icon: "checkroom" },
                 { label: "JACKETS", icon: "dry_cleaning" },
                 { label: "CURTAINS", icon: "blinds" },
