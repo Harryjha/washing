@@ -268,7 +268,7 @@ function ServicesContent() {
       <header className="fixed top-0 w-full z-50 bg-surface/90 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
         <div className="flex justify-between items-center px-6 py-4 max-w-[1200px] mx-auto">
           <Link href="/" className="flex items-center">
-            <img src="/Logo.png" alt="Washington Laundrettes" className="h-[64px] md:h-[80px] w-auto max-w-[320px] object-contain object-left" />
+            <img src="/logo.png" alt="Washington Laundrettes" className="h-[64px] md:h-[80px] w-auto max-w-[320px] object-contain object-left" />
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <Link href="/services" className="text-primary font-bold border-b-2 border-primary pb-1">Services</Link>

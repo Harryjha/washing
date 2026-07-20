@@ -40,7 +40,7 @@ export default function HomePage() {
         <div className="max-w-[1200px] mx-auto flex justify-between items-center px-6 h-full">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center">
-              <img src="/Logo.png" alt="Washington Laundrettes" className="h-[64px] md:h-[80px] w-auto max-w-[320px] object-contain object-left" />
+              <img src="/logo.png" alt="Washington Laundrettes" className="h-[64px] md:h-[80px] w-auto max-w-[320px] object-contain object-left" />
             </Link>
             <div className="hidden md:flex items-center gap-8">
               <Link
