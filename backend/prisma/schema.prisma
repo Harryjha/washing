@@ -35,8 +35,11 @@ model Order {
   rider            User?       @relation("RiderOrders", fields: [riderId], references: [id])
   status           OrderStatus @default(PENDING)
   totalAmount      Float       @default(0)
-  itemsDescription String      
+  serviceType      String?
+  itemsDescription String
   pickupAddress    String
+  pickupDate       DateTime?
+  specialNote      String?
   createdAt        DateTime    @default(now())
   updatedAt        DateTime    @updatedAt
 }

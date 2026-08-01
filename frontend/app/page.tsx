@@ -3,40 +3,45 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
+import ProfileDropdown from "../components/ProfileDropdown";
 
 export default function HomePage() {
-  const [scrolled, setScrolled] = useState(false);
+  const [activeNav, setActiveNav] = useState("services");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, loading } = useAuth();
+  const { user, logout, loading } = useAuth();
   const router = useRouter();
+  const pathname = usePathname();
 
-  useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 50);
-    };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  // Tomorrow's date in YYYY-MM-DD
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().split("T")[0];
 
-  useEffect(() => {
-    if (!loading && user) {
-      if (user.role === 'CUSTOMER') router.push('/customer');
-      if (user.role === 'RIDER') router.push('/rider');
-      if (user.role === 'ADMIN') router.push('/admin');
+  const [heroDate, setHeroDate] = useState(tomorrowStr);
+  const [heroAddress, setHeroAddress] = useState("");
+
+  const handleHeroSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (typeof window !== "undefined") {
+      localStorage.setItem("quickPickupData", JSON.stringify({
+        pickupDate: heroDate,
+        pickupAddress: heroAddress,
+      }));
     }
-  }, [user, loading, router]);
+    router.push("/services");
+  };
 
-  if (loading) return <div className="p-8 text-center">Loading...</div>;
+  const dashboardPath = user?.role === "ADMIN" ? "/admin" : user?.role === "RIDER" ? "/rider" : "/customer";
+  const dashboardLabel = user?.role === "ADMIN" ? "Admin Dashboard" : user?.role === "RIDER" ? "Rider Dashboard" : "My Dashboard";
+
+  if (loading) return <div className="p-8 text-center text-primary font-bold">Loading...</div>;
 
   return (
     <div className="bg-background text-on-surface font-body-md overflow-x-hidden min-h-screen">
 
       {/* ─── Navigation ─── */}
-      <nav
-        className={`fixed top-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-md transition-all duration-300 shadow-sm ${scrolled ? "h-16" : "h-20"
-          }`}
-      >
+      <nav className="fixed top-0 left-0 w-full z-50 bg-surface/90 backdrop-blur-md transition-all duration-300 shadow-sm h-20">
         <div className="max-w-[1200px] mx-auto flex justify-between items-center px-6 h-full">
           <div className="flex items-center gap-12">
             <Link href="/" className="flex items-center">
@@ -45,43 +50,78 @@ export default function HomePage() {
             <div className="hidden md:flex items-center gap-8">
               <Link
                 href="/services"
-                className="font-label-md text-primary font-bold border-b-2 border-primary pb-1 transition-colors duration-200"
+                onClick={() => setActiveNav("services")}
+                className={`font-label-md transition-all duration-200 pb-1 ${
+                  activeNav === "services" || pathname === "/services"
+                    ? "text-primary font-bold border-b-2 border-primary"
+                    : "text-on-surface-variant hover:text-primary hover:border-b-2 hover:border-primary/50"
+                }`}
               >
                 Services
               </Link>
               <a
                 href="#how-it-works"
-                className="font-label-md text-on-surface-variant hover:text-primary transition-colors duration-200"
+                onClick={() => setActiveNav("how-it-works")}
+                className={`font-label-md transition-all duration-200 pb-1 ${
+                  activeNav === "how-it-works"
+                    ? "text-primary font-bold border-b-2 border-primary"
+                    : "text-on-surface-variant hover:text-primary hover:border-b-2 hover:border-primary/50"
+                }`}
               >
                 How it Works
               </a>
               <a
                 href="#pricing"
-                className="font-label-md text-on-surface-variant hover:text-primary transition-colors duration-200"
+                onClick={() => setActiveNav("pricing")}
+                className={`font-label-md transition-all duration-200 pb-1 ${
+                  activeNav === "pricing"
+                    ? "text-primary font-bold border-b-2 border-primary"
+                    : "text-on-surface-variant hover:text-primary hover:border-b-2 hover:border-primary/50"
+                }`}
               >
                 Pricing
               </a>
               <a
                 href="#testimonials"
-                className="font-label-md text-on-surface-variant hover:text-primary transition-colors duration-200"
+                onClick={() => setActiveNav("testimonials")}
+                className={`font-label-md transition-all duration-200 pb-1 ${
+                  activeNav === "testimonials"
+                    ? "text-primary font-bold border-b-2 border-primary"
+                    : "text-on-surface-variant hover:text-primary hover:border-b-2 hover:border-primary/50"
+                }`}
               >
                 Testimonials
               </a>
             </div>
           </div>
+
           <div className="flex items-center gap-4">
-            <Link
-              href="/login"
-              className="hidden md:block font-label-md text-on-surface-variant hover:text-primary px-4 py-2 transition-all"
-            >
-              Log In
-            </Link>
-            <Link
-              href="/register"
-              className="hidden md:block bg-primary-container text-on-primary-container font-label-md px-6 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
-            >
-              Schedule Pickup
-            </Link>
+            {user ? (
+              <>
+                <Link
+                  href="/services"
+                  className="hidden md:block bg-primary-container text-on-primary-container font-label-md px-6 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                >
+                  Schedule Pickup
+                </Link>
+                <ProfileDropdown />
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="hidden md:block font-label-md text-on-surface-variant hover:text-primary px-4 py-2 transition-all"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/register"
+                  className="hidden md:block bg-primary-container text-on-primary-container font-label-md px-6 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                >
+                  Schedule Pickup
+                </Link>
+              </>
+            )}
             <button className="md:hidden text-primary p-2 flex items-center justify-center" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               <span className="material-symbols-outlined text-3xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
@@ -96,8 +136,16 @@ export default function HomePage() {
             <a href="#pricing" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
             <a href="#testimonials" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Testimonials</a>
             <div className="w-10/12 h-px bg-outline-variant/30 my-2"></div>
-            <Link href="/login" className="font-label-lg text-primary" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
-            <Link href="/register" className="bg-primary text-white font-label-lg px-8 py-4 rounded-xl shadow-sm w-10/12 text-center font-bold" onClick={() => setMobileMenuOpen(false)}>Schedule Pickup</Link>
+            {user ? (
+              <>
+                <div className="px-4"><ProfileDropdown /></div>
+              </>
+            ) : (
+              <>
+                <Link href="/login" className="font-label-lg text-primary" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
+                <Link href="/register" className="bg-primary text-white font-label-lg px-8 py-4 rounded-xl shadow-sm w-10/12 text-center font-bold" onClick={() => setMobileMenuOpen(false)}>Schedule Pickup</Link>
+              </>
+            )}
           </div>
         )}
       </nav>
@@ -134,27 +182,40 @@ export default function HomePage() {
                 <span style={{ color: "rgb(255, 87, 34)" }}>STEAMPRESS.</span>
               </p>
 
-              {/* Quick-book pill */}
-              <div className="bg-white rounded-full p-2 flex items-center shadow-xl max-w-md">
-                <div className="flex-1 px-6 border-r border-outline-variant">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                    Pickup
-                  </div>
-                  <div className="text-on-surface font-semibold">Tomorrow</div>
+              {/* Dynamic Quick-book pill */}
+              <form onSubmit={handleHeroSubmit} className="bg-white rounded-2xl md:rounded-full p-3 flex flex-col md:flex-row items-center gap-2 shadow-2xl max-w-xl border border-white/20">
+                <div className="w-full md:flex-1 px-4 border-b md:border-b-0 md:border-r border-gray-200 py-1">
+                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">
+                    Pickup Date
+                  </label>
+                  <input
+                    type="date"
+                    value={heroDate}
+                    onChange={(e) => setHeroDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]}
+                    className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none cursor-pointer"
+                  />
                 </div>
-                <div className="flex-1 px-6">
-                  <div className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">
-                    Where
-                  </div>
-                  <div className="text-on-surface-variant">Add address</div>
+                <div className="w-full md:flex-1 px-4 py-1">
+                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">
+                    Pickup Address
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter street & area..."
+                    value={heroAddress}
+                    onChange={(e) => setHeroAddress(e.target.value)}
+                    className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
+                  />
                 </div>
-                <Link
-                  href="/register"
-                  className="bg-primary-container text-on-primary-container w-12 h-12 rounded-full flex items-center justify-center hover:opacity-90 transition-all"
+                <button
+                  type="submit"
+                  className="bg-primary text-white w-full md:w-12 h-12 rounded-xl md:rounded-full flex items-center justify-center hover:bg-primary/90 transition-all shadow-md flex-shrink-0"
+                  title="Book Service Now"
                 >
-                  <span className="material-symbols-outlined">arrow_forward</span>
-                </Link>
-              </div>
+                  <span className="material-symbols-outlined text-2xl">arrow_forward</span>
+                </button>
+              </form>
             </div>
           </div>
         </div>

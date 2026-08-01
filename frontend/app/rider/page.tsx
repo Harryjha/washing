@@ -10,7 +10,7 @@ export default function RiderDashboard() {
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/login");
+    if (!loading && !user) router.push("/");
     if (user && user.role !== 'RIDER') router.push("/");
     
     if (user && user.role === 'RIDER') {
@@ -19,7 +19,7 @@ export default function RiderDashboard() {
   }, [user, loading]);
 
   const fetchOrders = async () => {
-    const res = await fetch("http://localhost:5000/api/orders/rider-orders", {
+    const res = await fetch("http://localhost:5001/api/orders/rider-orders", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
     });
     if (res.ok) {
@@ -29,7 +29,7 @@ export default function RiderDashboard() {
   };
 
   const updateStatus = async (id: number | string, status: string) => {
-    const res = await fetch(`http://localhost:5000/api/orders/${id}/status`, {
+    const res = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
       method: "PUT",
       headers: { 
         "Content-Type": "application/json",

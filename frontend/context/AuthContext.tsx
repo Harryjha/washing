@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const token = localStorage.getItem("token");
     if (token) {
       // Very basic verify logic for demo
-      fetch("http://localhost:5000/api/auth/verify", {
+      fetch("http://localhost:5001/api/auth/verify", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch("http://localhost:5000/api/auth/login", {
+    const res = await fetch("http://localhost:5001/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -47,11 +47,32 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const data = await res.json();
       localStorage.setItem("token", data.token);
       setUser(data.user);
-      
-      if (data.user.role === 'CUSTOMER') router.push('/customer');
-      if (data.user.role === 'RIDER') router.push('/rider');
-      if (data.user.role === 'ADMIN') router.push('/admin');
-      
+
+      // Check if user locked a pending order before logging in
+      const pendingRaw = typeof window !== "undefined" ? localStorage.getItem("pendingOrderData") : null;
+      if (pendingRaw && data.user.role === "CUSTOMER") {
+        try {
+          const payload = JSON.parse(pendingRaw);
+          const orderRes = await fetch("http://localhost:5001/api/orders", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${data.token}`,
+            },
+            body: JSON.stringify(payload),
+          });
+          localStorage.removeItem("pendingOrderData");
+          if (orderRes.ok) {
+            router.push("/services?orderSuccess=true");
+            return true;
+          }
+        } catch {}
+      }
+
+      if (data.user.role === "CUSTOMER") router.push("/customer");
+      if (data.user.role === "RIDER") router.push("/rider");
+      if (data.user.role === "ADMIN") router.push("/admin");
+
       return true;
     }
     return false;
@@ -60,7 +81,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     localStorage.removeItem("token");
     setUser(null);
-    router.push("/login");
+    router.push("/");
   };
 
   return (
