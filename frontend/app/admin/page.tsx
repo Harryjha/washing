@@ -27,7 +27,25 @@ type Customer = {
   _count: { orders: number };
 };
 
-type ActiveView = "dashboard" | "orders" | "customers" | "services";
+type Rider = {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  storeId?: string;
+  store?: { id: string; name: string };
+  stores?: { id: string; name: string }[];
+  createdAt: string;
+  _count: { deliveries: number };
+};
+
+type StoreObj = {
+  id: string;
+  name: string;
+  address: string;
+};
+
+type ActiveView = "dashboard" | "orders" | "customers" | "services" | "riders";
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING:              "bg-secondary-container text-on-secondary-container",
@@ -84,14 +102,30 @@ export default function AdminDashboard() {
   const [deletingCustomerId, setDeletingCustomerId] = useState<number | null>(null);
   const [deleteCustomerConfirmId, setDeleteCustomerConfirmId] = useState<number | null>(null);
 
+  // Riders & Stores state
+  const [riders, setRiders] = useState<Rider[]>([]);
+  const [stores, setStores] = useState<StoreObj[]>([]);
+  const [riderSearch, setRiderSearch] = useState("");
+  const [isAddRiderOpen, setIsAddRiderOpen] = useState(false);
+  const [addRiderForm, setAddRiderForm] = useState<{ name: string; email: string; password: string; phone: string; storeIds: string[] }>({ name: "", email: "", password: "", phone: "", storeIds: [] });
+  const [addRiderError, setAddRiderError] = useState("");
+  const [editingRider, setEditingRider] = useState<Rider | null>(null);
+  const [editRiderForm, setEditRiderForm] = useState<{ name: string; email: string; phone: string; storeIds: string[]; password: string }>({ name: "", email: "", phone: "", storeIds: [], password: "" });
+  const [deletingRiderId, setDeletingRiderId] = useState<number | null>(null);
+  const [deleteRiderConfirmId, setDeleteRiderConfirmId] = useState<number | null>(null);
+
   useEffect(() => {
     if (!loading && !user) router.push("/");
     if (!loading && user && user.role !== "ADMIN") router.push("/");
-    if (user && user.role === "ADMIN") fetchOrders();
+    if (user && user.role === "ADMIN") {
+      fetchOrders();
+      fetchStores();
+    }
   }, [user, loading]);
 
   useEffect(() => {
     if (activeView === "customers" && user?.role === "ADMIN") fetchCustomers();
+    if (activeView === "riders" && user?.role === "ADMIN") fetchRiders();
   }, [activeView]);
 
   const fetchOrders = async () => {
@@ -112,6 +146,94 @@ export default function AdminDashboard() {
       const data = await res.json();
       setCustomers(data);
     }
+  };
+
+  const fetchStores = async () => {
+    const res = await fetch("http://localhost:5001/api/orders/stores");
+    if (res.ok) {
+      const data = await res.json();
+      setStores(data);
+    }
+  };
+
+  const fetchRiders = async () => {
+    const res = await fetch("http://localhost:5001/api/riders", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setRiders(data);
+    }
+  };
+
+  const createRider = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddRiderError("");
+    const res = await fetch("http://localhost:5001/api/riders", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(addRiderForm),
+    });
+
+    if (res.ok) {
+      setIsAddRiderOpen(false);
+      setAddRiderForm({ name: "", email: "", password: "", phone: "", storeIds: [] });
+      fetchRiders();
+    } else {
+      const err = await res.json();
+      setAddRiderError(err.error || "Failed to register rider");
+    }
+  };
+
+  const openEditRider = (r: Rider) => {
+    setEditingRider(r);
+    
+    let existingStoreIds: string[] = [];
+    if (r.stores && r.stores.length > 0) {
+      existingStoreIds = r.stores.map(s => s.id);
+    } else if (r.storeId) {
+      existingStoreIds = [r.storeId];
+    } else if (r.store?.id) {
+      existingStoreIds = [r.store.id];
+    }
+
+    setEditRiderForm({
+      name: r.name,
+      email: r.email,
+      phone: r.phone || "",
+      storeIds: existingStoreIds,
+      password: "",
+    });
+  };
+
+  const saveRider = async () => {
+    if (!editingRider) return;
+    const res = await fetch(`http://localhost:5001/api/riders/${editingRider.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(editRiderForm),
+    });
+    if (res.ok) {
+      setEditingRider(null);
+      fetchRiders();
+    }
+  };
+
+  const deleteRider = async (id: number) => {
+    setDeletingRiderId(id);
+    const res = await fetch(`http://localhost:5001/api/riders/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    if (res.ok) setRiders((prev) => prev.filter((r) => r.id !== id));
+    setDeletingRiderId(null);
+    setDeleteRiderConfirmId(null);
   };
 
   const updateStatus = async (id: number, status: string) => {
@@ -241,6 +363,7 @@ export default function AdminDashboard() {
           <NavItem view="orders"     icon="list_alt"       label="Orders"     />
           <NavItem view="customers"  icon="group"          label="Customers"  />
           <NavItem view="services"   icon="dry_cleaning"   label="Services"   />
+          <NavItem view="riders"     icon="two_wheeler"    label="Riders"     />
           <button className="w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span className="material-symbols-outlined mr-4">settings</span>Settings
           </button>
@@ -915,6 +1038,330 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ RIDERS VIEW ══════════ */}
+          {activeView === "riders" && (
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-on-surface">Registered Logistics Riders ({riders.length})</h2>
+                  <p className="text-sm text-outline">Manage delivery personnel login credentials, assigned store hubs, and tasks.</p>
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-64">
+                    <span className="material-symbols-outlined absolute left-3 top-3 text-outline text-[20px]">search</span>
+                    <input
+                      type="text"
+                      placeholder="Search riders…"
+                      value={riderSearch}
+                      onChange={(e) => setRiderSearch(e.target.value)}
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsAddRiderOpen(true);
+                      setAddRiderError("");
+                    }}
+                    className="bg-primary text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md hover:bg-primary/90 transition-all flex items-center gap-2 flex-shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-base">person_add</span>
+                    Register New Rider
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/30 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low border-b border-outline-variant/20 text-on-surface-variant">
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Rider Name</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Login Email</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Phone</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Assigned Store Hub</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Deliveries</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/10">
+                      {riders.filter(r => !riderSearch || r.name.toLowerCase().includes(riderSearch.toLowerCase()) || r.email.toLowerCase().includes(riderSearch.toLowerCase()) || (r.store?.name || "").toLowerCase().includes(riderSearch.toLowerCase())).length === 0 ? (
+                        <tr>
+                          <td colSpan={7} className="px-6 py-12 text-center text-on-surface-variant font-semibold">
+                            No riders registered yet. Click &quot;Register New Rider&quot; to create credentials.
+                          </td>
+                        </tr>
+                      ) : (
+                        riders
+                          .filter(r => !riderSearch || r.name.toLowerCase().includes(riderSearch.toLowerCase()) || r.email.toLowerCase().includes(riderSearch.toLowerCase()) || (r.store?.name || "").toLowerCase().includes(riderSearch.toLowerCase()))
+                          .map((r, idx) => (
+                            <tr key={r.id} className="hover:bg-surface-container-low transition-colors">
+                              <td className="px-6 py-4 font-mono text-xs text-primary font-bold">#{r.id}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
+                                    {initials(r.name)}
+                                  </div>
+                                  <span className="font-semibold text-sm text-on-surface">{r.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-on-surface-variant font-mono">{r.email}</td>
+                              <td className="px-6 py-4 text-sm text-on-surface-variant">{r.phone || "—"}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex flex-wrap gap-1.5">
+                                  {(() => {
+                                    const assignedStores = r.stores && r.stores.length > 0 ? r.stores : (r.store ? [r.store] : []);
+                                    if (assignedStores.length === 0) {
+                                      return (
+                                        <span className="px-3 py-1 rounded-full bg-gray-100 text-gray-500 text-xs font-bold border border-gray-200 inline-flex items-center gap-1.5">
+                                          <span className="material-symbols-outlined text-sm">store</span>
+                                          Unassigned
+                                        </span>
+                                      );
+                                    }
+                                    return assignedStores.map((s) => (
+                                      <span key={s.id} className="px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-bold border border-sky-200 inline-flex items-center gap-1.5">
+                                        <span className="material-symbols-outlined text-sm">store</span>
+                                        {s.name}
+                                      </span>
+                                    ));
+                                  })()}
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                                  {r._count?.deliveries || 0} tasks
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => openEditRider(r)}
+                                    className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-all"
+                                    title="Edit rider details / password"
+                                  >
+                                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                                  </button>
+                                  {deleteRiderConfirmId === r.id ? (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => deleteRider(r.id)}
+                                        disabled={deletingRiderId === r.id}
+                                        className="text-[11px] font-bold bg-error text-white px-2 py-1 rounded-lg"
+                                      >
+                                        Yes
+                                      </button>
+                                      <button
+                                        onClick={() => setDeleteRiderConfirmId(null)}
+                                        className="text-[11px] font-bold bg-gray-200 text-gray-700 px-2 py-1 rounded-lg"
+                                      >
+                                        No
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setDeleteRiderConfirmId(r.id)}
+                                      className="p-1.5 rounded-lg text-error hover:bg-error/10 transition-all"
+                                      title="Delete rider"
+                                    >
+                                      <span className="material-symbols-outlined text-[20px]">delete</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Register New Rider Modal */}
+          {isAddRiderOpen && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-on-surface">Register New Rider</h3>
+                    <p className="text-xs text-outline">Set up login credentials for delivery personnel</p>
+                  </div>
+                  <button onClick={() => setIsAddRiderOpen(false)} className="text-outline hover:text-on-surface">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                {addRiderError && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 text-xs font-semibold p-3 rounded-xl">
+                    {addRiderError}
+                  </div>
+                )}
+
+                <form onSubmit={createRider} className="space-y-4 text-sm">
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Rider Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Ramesh Kumar"
+                      value={addRiderForm.name}
+                      onChange={(e) => setAddRiderForm({ ...addRiderForm, name: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Login Email</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. rider.ramesh@washington.com"
+                      value={addRiderForm.email}
+                      onChange={(e) => setAddRiderForm({ ...addRiderForm, email: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="Set login password for rider"
+                      value={addRiderForm.password}
+                      onChange={(e) => setAddRiderForm({ ...addRiderForm, password: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +91 98765 43210"
+                      value={addRiderForm.phone}
+                      onChange={(e) => setAddRiderForm({ ...addRiderForm, phone: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Assigned Store Hubs (Multiple Allowed)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto p-1">
+                      {stores.map((s) => (
+                        <label key={s.id} className={`flex items-center gap-2 text-sm p-2.5 border rounded-xl cursor-pointer transition-colors ${addRiderForm.storeIds.includes(s.id) ? 'bg-primary/5 border-primary/30' : 'hover:bg-gray-50'}`}>
+                          <input
+                            type="checkbox"
+                            checked={addRiderForm.storeIds.includes(s.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setAddRiderForm({ ...addRiderForm, storeIds: [...addRiderForm.storeIds, s.id] });
+                              } else {
+                                setAddRiderForm({ ...addRiderForm, storeIds: addRiderForm.storeIds.filter(id => id !== s.id) });
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="truncate font-semibold text-gray-700">{s.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 pt-4 border-t">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddRiderOpen(false)}
+                      className="flex-1 py-2.5 bg-gray-100 font-bold text-xs rounded-xl text-gray-700"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="flex-1 py-2.5 bg-primary text-white font-bold text-xs rounded-xl shadow-md">
+                      Create Credentials
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Rider Modal */}
+          {editingRider && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <h3 className="text-lg font-bold text-on-surface">Edit Rider Credentials &amp; Store</h3>
+                  <button onClick={() => setEditingRider(null)} className="text-outline hover:text-on-surface">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={editRiderForm.name}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, name: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editRiderForm.email}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, email: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Phone</label>
+                    <input
+                      type="text"
+                      value={editRiderForm.phone}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, phone: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Assigned Store Hubs (Multiple Allowed)</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2 max-h-40 overflow-y-auto p-1">
+                      {stores.map((s) => (
+                        <label key={s.id} className={`flex items-center gap-2 text-sm p-2.5 border rounded-xl cursor-pointer transition-colors ${editRiderForm.storeIds.includes(s.id) ? 'bg-primary/5 border-primary/30' : 'hover:bg-gray-50'}`}>
+                          <input
+                            type="checkbox"
+                            checked={editRiderForm.storeIds.includes(s.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setEditRiderForm({ ...editRiderForm, storeIds: [...editRiderForm.storeIds, s.id] });
+                              } else {
+                                setEditRiderForm({ ...editRiderForm, storeIds: editRiderForm.storeIds.filter(id => id !== s.id) });
+                              }
+                            }}
+                            className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                          <span className="truncate font-semibold text-gray-700">{s.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">New Password (Optional)</label>
+                    <input
+                      type="password"
+                      placeholder="Leave blank to keep current password"
+                      value={editRiderForm.password}
+                      onChange={(e) => setEditRiderForm({ ...editRiderForm, password: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2 border-t">
+                  <button onClick={() => setEditingRider(null)} className="flex-1 py-2.5 bg-gray-100 font-bold text-xs rounded-xl">Cancel</button>
+                  <button onClick={saveRider} className="flex-1 py-2.5 bg-primary text-white font-bold text-xs rounded-xl">Save Changes</button>
+                </div>
               </div>
             </div>
           )}

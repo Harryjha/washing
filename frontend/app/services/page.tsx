@@ -5,6 +5,12 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useAuth } from "../../context/AuthContext";
 import ProfileDropdown from "../../components/ProfileDropdown";
+import dynamic from "next/dynamic";
+
+const CustomerLocationPicker = dynamic(
+  () => import("../../components/CustomerLocationPicker"),
+  { ssr: false, loading: () => <div className="h-64 animate-pulse bg-gray-100 rounded-3xl" /> }
+);
 
 // ─── Service Data ─────────────────────────────────────────────────────────────
 const SERVICES = [
@@ -185,17 +191,12 @@ const DRY_CLEANING_CATEGORIES = {
     { name: "Bed Sheet (Double)", price: 200, unit: "/item" },
     { name: "Door Mat", price: 150, unit: "/item" },
     { name: "Sofa Cover", price: 150, unit: "/item" },
-    { name: "Shoes", price: 450, unit: "/pair" },
-    { name: "Crocks", price: 300, unit: "/pair" },
-    { name: "Pillow", price: 199, unit: "/item" },
-    { name: "Pillow Cover", price: 99, unit: "/item" },
-    { name: "Cap", price: 50, unit: "/item" },
-    { name: "Curtains (Single Layer)", price: 8, unit: "/sqft" },
-    { name: "Curtains (Double Layer)", price: 15, unit: "/sqft" },
-    { name: "Carpet", price: 40, unit: "/sqft" },
-    { name: "Teddy", price: 250, unit: "/feet" },
-    { name: "Shoulder Bag/Ladies Purse", price: 400, unit: "/item" },
-    { name: "Trolly Bag/Bags", price: 450, unit: "/item" },
+    { name: "Single Blanket / Quilt", price: 249, icon: "bed" },
+    { name: "Double Blanket / Heavy Quilt", price: 399, icon: "bed" },
+    { name: "Bedspread / Bedcover", price: 199, icon: "bed" },
+    { name: "Curtain (per panel)", price: 149, icon: "curtains" },
+    { name: "Carpet / Rug (small)", price: 299, icon: "texture" },
+    { name: "Cushion Cover (Set of 4)", price: 119, icon: "chair" },
   ],
 } as const;
 
@@ -213,6 +214,9 @@ function ServicesContent() {
   const [selectedClothes, setSelectedClothes] = useState<Record<string, number>>({});
   const [pickupDate, setPickupDate] = useState("");
   const [address, setAddress] = useState("");
+  const [pickupLat, setPickupLat] = useState<number | undefined>(undefined);
+  const [pickupLng, setPickupLng] = useState<number | undefined>(undefined);
+  const [pickupLandmark, setPickupLandmark] = useState<string>("");
   const [specialNote, setSpecialNote] = useState("");
   const [orderSubmitted, setOrderSubmitted] = useState(false);
   const [orderError, setOrderError] = useState("");
@@ -279,6 +283,9 @@ function ServicesContent() {
       serviceType: activeService.label,
       itemsDescription,
       pickupAddress: address,
+      pickupLatitude: pickupLat,
+      pickupLongitude: pickupLng,
+      pickupLandmark: pickupLandmark || null,
       pickupDate: pickupDate || null,
       specialNote: specialNote || null,
     };
@@ -618,39 +625,51 @@ function ServicesContent() {
                 )}
 
                 {/* ── Step: Pickup Details ── */}
-                <div className="bg-white rounded-3xl p-8 shadow-sm border border-outline-variant/30">
-                  <div className="flex items-center gap-4 mb-8">
-                    <div className={`w-10 h-10 ${activeService.bgAccent} text-white rounded-full flex items-center justify-center font-bold text-lg`}>{pickupStep}</div>
-                    <h2 className="text-2xl font-bold text-on-surface">Pickup Details</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant" htmlFor="pickup-date">Preferred Pickup Date</label>
-                      <div className="relative">
-                        <input
-                          id="pickup-date"
-                          type="date"
-                          value={pickupDate}
-                          onChange={(e) => setPickupDate(e.target.value)}
-                          min={new Date().toISOString().split("T")[0]}
-                          className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-4 px-5 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
-                          required
-                        />
-                      </div>
+                <div className="space-y-6">
+                  {/* Interactive Map Location Picker */}
+                  <CustomerLocationPicker
+                    initialAddress={address}
+                    onLocationSelect={({ latitude, longitude, address: newAddr, landmark }: { latitude: number; longitude: number; address: string; landmark?: string }) => {
+                      setPickupLat(latitude);
+                      setPickupLng(longitude);
+                      setAddress(newAddr);
+                      if (landmark) setPickupLandmark(landmark);
+                    }}
+                  />
+
+                  <div className="bg-white rounded-3xl p-8 shadow-sm border border-outline-variant/30">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className={`w-10 h-10 ${activeService.bgAccent} text-white rounded-full flex items-center justify-center font-bold text-lg`}>{pickupStep}</div>
+                      <h2 className="text-2xl font-bold text-on-surface">Pickup Date &amp; Details</h2>
                     </div>
-                    <div className="space-y-2">
-                      <label className="block text-sm font-bold text-on-surface-variant" htmlFor="pickup-address">Pickup Address</label>
-                      <div className="relative">
-                        <input
-                          id="pickup-address"
-                          type="text"
-                          value={address}
-                          onChange={(e) => setAddress(e.target.value)}
-                          placeholder="Enter your full address"
-                          className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-4 px-5 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all"
-                          required
-                        />
-                        <span className="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">location_on</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-on-surface-variant" htmlFor="pickup-date">Preferred Pickup Date</label>
+                        <div className="relative">
+                          <input
+                            id="pickup-date"
+                            type="date"
+                            value={pickupDate}
+                            onChange={(e) => setPickupDate(e.target.value)}
+                            min={new Date().toISOString().split("T")[0]}
+                            className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-4 px-5 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all cursor-pointer"
+                            required
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="block text-sm font-bold text-on-surface-variant" htmlFor="pickup-address">Confirmed Address Line</label>
+                        <div className="relative">
+                          <input
+                            id="pickup-address"
+                            type="text"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            placeholder="Enter or adjust your full address"
+                            className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl py-4 px-5 text-on-surface focus:ring-2 focus:ring-primary focus:border-primary transition-all"
+                            required
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

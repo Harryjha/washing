@@ -8,17 +8,30 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model User {
-  id        Int      @id @default(autoincrement())
-  email     String   @unique
-  password  String
+model Store {
+  id        String   @id @default(uuid())
   name      String
-  role      Role     @default(CUSTOMER)
-  phone     String?
-  address   String?
-  orders    Order[]  @relation("CustomerOrders")
-  deliveries Order[] @relation("RiderOrders")
+  address   String
+  latitude  Float
+  longitude Float
+  riders    User[]   @relation("RiderAssignedStores")
+  orders    Order[]  @relation("StoreOrders")
   createdAt DateTime @default(now())
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  email      String   @unique
+  password   String
+  name       String
+  role       Role     @default(CUSTOMER)
+  phone      String?
+  address    String?
+  storeId    String?
+  stores     Store[]  @relation("RiderAssignedStores")
+  orders     Order[]  @relation("CustomerOrders")
+  deliveries Order[]  @relation("RiderOrders")
+  createdAt  DateTime @default(now())
 }
 
 enum Role {
@@ -33,11 +46,16 @@ model Order {
   customer         User        @relation("CustomerOrders", fields: [customerId], references: [id])
   riderId          Int?
   rider            User?       @relation("RiderOrders", fields: [riderId], references: [id])
-  status           OrderStatus @default(PENDING)
+  storeId          String?
+  store            Store?      @relation("StoreOrders", fields: [storeId], references: [id])
+  status           OrderStatus @default(PENDING_PICKUP)
   totalAmount      Float       @default(0)
   serviceType      String?
   itemsDescription String
   pickupAddress    String
+  pickupLatitude   Float?
+  pickupLongitude  Float?
+  pickupLandmark   String?
   pickupDate       DateTime?
   specialNote      String?
   createdAt        DateTime    @default(now())
@@ -46,9 +64,13 @@ model Order {
 
 enum OrderStatus {
   PENDING
+  PENDING_PICKUP
+  RIDER_ASSIGNED
   PICKED_UP
   IN_WASHING
+  IN_LAUNDRY
   READY_FOR_DELIVERY
   DELIVERED
   CANCELLED
 }
+

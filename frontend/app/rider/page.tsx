@@ -3,87 +3,265 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import ProfileDropdown from "../../components/ProfileDropdown";
+
+type OrderTask = {
+  id: number;
+  status: string;
+  serviceType: string;
+  itemsDescription: string;
+  pickupAddress: string;
+  pickupLatitude?: number;
+  pickupLongitude?: number;
+  pickupLandmark?: string;
+  pickupDate?: string;
+  specialNote?: string;
+  createdAt: string;
+  customer: { name: string; phone?: string; email: string };
+  store?: { name: string; address: string };
+};
+
+const STATUS_BADGES: Record<string, { label: string; style: string }> = {
+  PENDING:            { label: "Pending Pickup", style: "bg-amber-100 text-amber-800 font-bold" },
+  PENDING_PICKUP:     { label: "Pending Pickup", style: "bg-amber-100 text-amber-800 font-bold" },
+  RIDER_ASSIGNED:     { label: "En Route",        style: "bg-sky-100 text-sky-800 font-bold" },
+  PICKED_UP:          { label: "Picked Up",       style: "bg-purple-100 text-purple-800 font-bold" },
+  IN_WASHING:         { label: "In Washing",      style: "bg-indigo-100 text-indigo-800 font-bold" },
+  IN_LAUNDRY:         { label: "In Washing",      style: "bg-indigo-100 text-indigo-800 font-bold" },
+  READY_FOR_DELIVERY: { label: "Out for Delivery",style: "bg-teal-100 text-teal-800 font-bold" },
+  DELIVERED:          { label: "Delivered",       style: "bg-emerald-100 text-emerald-800 font-bold" },
+};
 
 export default function RiderDashboard() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState<OrderTask[]>([]);
+  const [fetching, setFetching] = useState<boolean>(true);
+  const [updatingId, setUpdatingId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
-    if (user && user.role !== 'RIDER') router.push("/");
-    
-    if (user && user.role === 'RIDER') {
+    if (user && user.role !== "RIDER" && user.role !== "ADMIN") router.push("/");
+    if (user && (user.role === "RIDER" || user.role === "ADMIN")) {
       fetchOrders();
     }
   }, [user, loading]);
 
   const fetchOrders = async () => {
-    const res = await fetch("http://localhost:5001/api/orders/rider-orders", {
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-    });
-    if (res.ok) {
-      const data = await res.json();
-      setOrders(data);
+    setFetching(true);
+    try {
+      const res = await fetch("http://localhost:5001/api/orders/rider/tasks", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data);
+      }
+    } finally {
+      setFetching(false);
     }
   };
 
-  const updateStatus = async (id: number | string, status: string) => {
-    const res = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
-      method: "PUT",
-      headers: { 
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("token")}`
-      },
-      body: JSON.stringify({ status })
-    });
-    if (res.ok) fetchOrders();
+  const updateStatus = async (id: number, status: string) => {
+    setUpdatingId(id);
+    try {
+      const res = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({ status }),
+      });
+      if (res.ok) fetchOrders();
+    } finally {
+      setUpdatingId(null);
+    }
   };
 
-  if (loading || !user) return <div className="p-8">Loading...</div>;
+  if (loading || !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-semibold text-gray-600">Loading rider tasks…</p>
+        </div>
+      </div>
+    );
+  }
+
+  const activePickups = orders.filter((o) => o.status !== "DELIVERED" && o.status !== "CANCELLED");
 
   return (
-    <div>
-      <nav className="navbar">
-        <div className="nav-brand">Dashboard (Rider)</div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <span style={{ fontWeight: '600' }}>Hello, {user.name}</span>
-          <button onClick={logout} className="btn-primary" style={{ background: 'var(--danger)' }}>Logout</button>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-[#f8fafb] text-gray-900 font-sans">
+      {/* ─── Top Header ─── */}
+      <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-sm">
+        <div className="max-w-[1200px] mx-auto px-6 py-4 flex justify-between items-center">
+          <Link href="/" className="flex items-center gap-3">
+            <img src="/logo.png" alt="Washington Laundrettes" className="h-[52px] w-auto object-contain" />
+            <span className="bg-primary/10 text-primary text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider hidden sm:inline-block">
+              Rider Portal
+            </span>
+          </Link>
 
-      <main className="dashboard-container">
-        <h2 style={{ marginBottom: '2rem' }}>Available & My Pickups</h2>
-
-        <div className="grid">
-          {orders.map((order: any) => (
-            <div key={order.id} className="order-card glass-panel">
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem' }}>
-                <strong>Order #{order.id}</strong>
-                <span className={`badge ${order.status.toLowerCase().replace('_', '-')}`}>{order.status}</span>
-              </div>
-              <p style={{ color: 'var(--text-muted)', marginBottom: '0.5rem' }}>{order.itemsDescription}</p>
-              
-              <div style={{ background: '#F9FAFB', padding: '0.75rem', borderRadius: '8px', marginBottom: '1rem', fontSize: '0.875rem' }}>
-                <strong>Customer:</strong> {order.customer.name} ({order.customer.phone})<br/>
-                <strong>Pickup/Drop:</strong> {order.pickupAddress}
-              </div>
-
-              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                {order.status === 'PENDING' && (
-                  <button className="btn-primary" onClick={() => updateStatus(order.id, 'PICKED_UP')}>Accept & Pick Up</button>
-                )}
-                {order.status === 'PICKED_UP' && (
-                  <button className="btn-primary" style={{ background: 'var(--warning)' }} onClick={() => updateStatus(order.id, 'IN_WASHING')}>Drop at Laundry</button>
-                )}
-                {order.status === 'READY_FOR_DELIVERY' && (
-                  <button className="btn-primary" onClick={() => updateStatus(order.id, 'DELIVERED')}>Mark Delivered</button>
-                )}
-              </div>
+          <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-semibold text-gray-700">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              {user.name}
             </div>
-          ))}
-          {orders.length === 0 && <p>No orders available at the moment.</p>}
+            <ProfileDropdown />
+          </div>
         </div>
+      </header>
+
+      {/* ─── Main Content ─── */}
+      <main className="max-w-[1200px] mx-auto px-6 py-8 space-y-8">
+        {/* Banner */}
+        <div className="bg-gradient-to-r from-[#004d64] via-[#006684] to-[#016684] text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="space-y-2">
+            <div className="inline-flex items-center gap-2 bg-white/15 px-3 py-1 rounded-full text-xs font-semibold text-sky-200 uppercase tracking-wider">
+              <span className="material-symbols-outlined text-sm">near_me</span>
+              Direct Routing Dispatch Engine
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black">Rider Pickup Tasks</h1>
+            <p className="text-sky-100 text-xs md:text-sm max-w-lg">
+              Assigned pickup routes automatically matched to your Washington Laundrettes hub.
+            </p>
+          </div>
+
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-4 rounded-2xl text-center min-w-[140px]">
+            <span className="text-[11px] font-bold text-sky-200 uppercase tracking-wider block">Active Tasks</span>
+            <span className="text-3xl font-black">{activePickups.length}</span>
+          </div>
+        </div>
+
+        {/* Tasks Grid */}
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">two_wheeler</span>
+              Assigned Store Tasks ({orders.length})
+            </h2>
+            <button onClick={fetchOrders} className="text-xs font-bold text-primary hover:underline flex items-center gap-1">
+              <span className="material-symbols-outlined text-base">refresh</span>
+              Refresh Tasks
+            </button>
+          </div>
+
+          {fetching ? (
+            <div className="bg-white rounded-2xl p-8 border border-gray-200 text-center text-gray-500 text-sm">
+              Loading tasks…
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="bg-white rounded-2xl p-10 border border-gray-200 text-center space-y-3">
+              <span className="material-symbols-outlined text-4xl text-gray-300">task</span>
+              <p className="text-gray-600 font-semibold text-sm">No pickup tasks available for your store hub right now.</p>
+              <p className="text-gray-400 text-xs">New direct-routing orders will appear here automatically.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {orders.map((o) => {
+                const badge = STATUS_BADGES[o.status] || { label: o.status, style: "bg-gray-100 text-gray-800" };
+                const hasCoordinates = Boolean(o.pickupLatitude && o.pickupLongitude);
+                const navUrl = hasCoordinates
+                  ? `https://www.google.com/maps/dir/?api=1&destination=${o.pickupLatitude},${o.pickupLongitude}`
+                  : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(o.pickupAddress)}`;
+
+                return (
+                  <div
+                    key={o.id}
+                    className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm space-y-4 hover:shadow-md hover:border-primary/30 transition-all flex flex-col justify-between"
+                  >
+                    <div className="space-y-3">
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-primary text-base">#{String(o.id).padStart(4, "0")}</span>
+                          <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary">
+                            {o.serviceType || "Laundry"}
+                          </span>
+                        </div>
+                        <span className={`text-xs px-3 py-1 rounded-full ${badge.style}`}>{badge.label}</span>
+                      </div>
+
+                      {/* Customer info */}
+                      <div className="space-y-1 text-xs">
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold text-gray-900 text-sm">{o.customer.name}</span>
+                          {o.customer.phone && (
+                            <a href={`tel:${o.customer.phone}`} className="text-primary font-bold hover:underline flex items-center gap-1">
+                              <span className="material-symbols-outlined text-sm">call</span>
+                              {o.customer.phone}
+                            </a>
+                          )}
+                        </div>
+
+                        <p className="text-gray-600 truncate">{o.pickupAddress}</p>
+                        {o.pickupLandmark && (
+                          <p className="text-emerald-700 font-semibold text-[11px]">📍 Landmark: {o.pickupLandmark}</p>
+                        )}
+                        {o.store && (
+                          <p className="text-gray-400 text-[11px]">Hub: <strong className="text-gray-700">{o.store.name}</strong></p>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-3 border-t border-gray-100 flex flex-wrap items-center gap-2">
+                      <Link
+                        href={`/rider/orders/${o.id}`}
+                        className="flex-1 bg-gray-900 text-white text-xs font-bold py-2.5 px-4 rounded-xl text-center hover:bg-gray-800 transition-all"
+                      >
+                        View &amp; Navigate →
+                      </Link>
+
+                      <a
+                        href={navUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="bg-sky-600 text-white text-xs font-bold p-2.5 rounded-xl hover:bg-sky-700 transition-all flex items-center justify-center"
+                        title="Start Google Maps Navigation"
+                      >
+                        <span className="material-symbols-outlined text-base">navigation</span>
+                      </a>
+
+                      {(o.status === "PENDING" || o.status === "PENDING_PICKUP") && (
+                        <button
+                          onClick={() => updateStatus(o.id, "PICKED_UP")}
+                          disabled={updatingId === o.id}
+                          className="bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+                        >
+                          Pick Up
+                        </button>
+                      )}
+
+                      {o.status === "PICKED_UP" && (
+                        <button
+                          onClick={() => updateStatus(o.id, "IN_LAUNDRY")}
+                          disabled={updatingId === o.id}
+                          className="bg-purple-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-purple-700 transition-all disabled:opacity-50"
+                        >
+                          At Store
+                        </button>
+                      )}
+
+                      {o.status === "READY_FOR_DELIVERY" && (
+                        <button
+                          onClick={() => updateStatus(o.id, "DELIVERED")}
+                          disabled={updatingId === o.id}
+                          className="bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+                        >
+                          Delivered
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

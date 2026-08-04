@@ -1,35 +1,22 @@
 const express = require('express');
 const { PrismaClient } = require('@prisma/client');
 const { authenticate, authorize } = require('../middleware/auth');
+const {
+  createOrder,
+  getRiderTasks,
+  updateOrderStatus,
+  getOrderById,
+  getStores,
+} = require('../controllers/orderController');
 
 const router = express.Router();
 const prisma = new PrismaClient();
 
-// ─── Customer: Create a new order ─────────────────────────────────────────────
-router.post('/', authenticate, authorize(['CUSTOMER']), async (req, res) => {
-  try {
-    const { serviceType, itemsDescription, pickupAddress, pickupDate, specialNote } = req.body;
+// ─── Public / Common: Get Stores ───────────────────────────────────────────────
+router.get('/stores', getStores);
 
-    if (!pickupAddress) return res.status(400).json({ error: 'pickupAddress is required' });
-
-    const order = await prisma.order.create({
-      data: {
-        customerId: req.user.id,
-        serviceType: serviceType || null,
-        itemsDescription: itemsDescription || '',
-        pickupAddress,
-        pickupDate: pickupDate ? new Date(pickupDate) : null,
-        specialNote: specialNote || null,
-        status: 'PENDING',
-      },
-    });
-
-    res.status(201).json(order);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
+// ─── Customer: Create a new order with nearest store calculation ──────────────
+router.post('/', authenticate, authorize(['CUSTOMER']), createOrder);
 
 // ─── Customer: Get my orders ───────────────────────────────────────────────────
 router.get('/my-orders', authenticate, authorize(['CUSTOMER']), async (req, res) => {
@@ -37,23 +24,9 @@ router.get('/my-orders', authenticate, authorize(['CUSTOMER']), async (req, res)
     const orders = await prisma.order.findMany({
       where: { customerId: req.user.id },
       orderBy: { createdAt: 'desc' },
-      include: { rider: { select: { name: true, phone: true } } },
-    });
-    res.json(orders);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ─── Admin: Get all orders ─────────────────────────────────────────────────────
-router.get('/all', authenticate, authorize(['ADMIN']), async (req, res) => {
-  try {
-    const orders = await prisma.order.findMany({
-      orderBy: { createdAt: 'desc' },
       include: {
-        customer: { select: { name: true, email: true, phone: true } },
         rider: { select: { name: true, phone: true } },
+        store: true,
       },
     });
     res.json(orders);
@@ -62,6 +35,38 @@ router.get('/all', authenticate, authorize(['ADMIN']), async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// ─── Rider: Get tasks matching Rider's assigned store ─────────────────────────
+router.get('/rider/tasks', authenticate, authorize(['RIDER', 'ADMIN']), getRiderTasks);
+router.get('/rider-orders', authenticate, authorize(['RIDER', 'ADMIN']), getRiderTasks);
+
+// ─── Admin: Get all orders (MUST BE DECLARED BEFORE GET /:id) ───────────────
+router.get('/all', authenticate, authorize(['ADMIN']), async (req, res) => {
+  try {
+    const orders = await prisma.order.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        customer: { select: { name: true, email: true, phone: true } },
+        rider: { select: { name: true, phone: true } },
+        store: true,
+      },
+    });
+    res.json(orders);
+  } catch (error) {
+    console.error('ALL ORDERS ERROR:', error);
+    res.status(500).json({ error: error.message || 'Failed to fetch all orders' });
+  }
+});
+
+// ─── Get Single Order Details ──────────────────────────────────────────────────
+router.get('/:id', authenticate, (req, res, next) => {
+  if (isNaN(Number(req.params.id))) return next();
+  return getOrderById(req, res);
+});
+
+// ─── Rider / Admin: Status Update Endpoint ─────────────────────────────────────
+router.patch('/:id/status', authenticate, authorize(['RIDER', 'ADMIN']), updateOrderStatus);
+router.put('/:id/status', authenticate, authorize(['RIDER', 'ADMIN']), updateOrderStatus);
 
 // ─── Admin: Delete an order ────────────────────────────────────────────────────
 router.delete('/:id', authenticate, authorize(['ADMIN']), async (req, res) => {
@@ -85,53 +90,6 @@ router.put('/:id/assign', authenticate, authorize(['ADMIN']), async (req, res) =
       data: { riderId: Number(riderId) },
     });
     res.json(order);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ─── Rider: Get available or assigned orders ───────────────────────────────────
-router.get('/rider-orders', authenticate, authorize(['RIDER']), async (req, res) => {
-  try {
-    const orders = await prisma.order.findMany({
-      where: {
-        OR: [
-          { riderId: req.user.id },
-          { riderId: null, status: 'PENDING' },
-        ],
-      },
-      orderBy: { createdAt: 'desc' },
-      include: { customer: { select: { name: true, phone: true, address: true } } },
-    });
-    res.json(orders);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-// ─── Rider/Admin: Update order status ─────────────────────────────────────────
-router.put('/:id/status', authenticate, authorize(['RIDER', 'ADMIN']), async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { status } = req.body;
-
-    const order = await prisma.order.findUnique({ where: { id: Number(id) } });
-    if (!order) return res.status(404).json({ error: 'Order not found' });
-
-    let dataToUpdate = { status };
-    if (req.user.role === 'RIDER' && !order.riderId && status === 'PICKED_UP') {
-      dataToUpdate.riderId = req.user.id;
-    } else if (req.user.role === 'RIDER' && order.riderId !== req.user.id) {
-      return res.status(403).json({ error: 'Not authorized for this order' });
-    }
-
-    const updatedOrder = await prisma.order.update({
-      where: { id: Number(id) },
-      data: dataToUpdate,
-    });
-    res.json(updatedOrder);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Internal server error' });
