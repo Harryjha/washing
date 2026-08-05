@@ -50,9 +50,12 @@ type StoreObj = {
   id: string;
   name: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
+  _count?: { riders?: number; orders?: number; storeAdmins?: number };
 };
 
-type ActiveView = "dashboard" | "orders" | "customers" | "services" | "riders" | "store-admins";
+type ActiveView = "dashboard" | "orders" | "customers" | "services" | "riders" | "store-admins" | "stores";
 
 type StoreAdmin = {
   id: number;
@@ -136,6 +139,18 @@ export default function AdminDashboard() {
   // Store Admins state
   const [storeAdmins, setStoreAdmins] = useState<StoreAdmin[]>([]);
   const [storeAdminSearch, setStoreAdminSearch] = useState("");
+  // Store Hub Management States
+  const [isAddStoreOpen, setIsAddStoreOpen] = useState(false);
+  const [newStoreName, setNewStoreName] = useState("");
+  const [newStoreAddress, setNewStoreAddress] = useState("");
+  const [newStoreLat, setNewStoreLat] = useState("12.9716");
+  const [newStoreLng, setNewStoreLng] = useState("77.5946");
+  const [addStoreError, setAddStoreError] = useState("");
+  const [isAddingStore, setIsAddingStore] = useState(false);
+  const [deleteStoreConfirmId, setDeleteStoreConfirmId] = useState<string | null>(null);
+  const [deletingStoreId, setDeletingStoreId] = useState<string | null>(null);
+  const [isClearingStores, setIsClearingStores] = useState(false);
+  const [storeSearch, setStoreSearch] = useState("");
   const [isAddStoreAdminOpen, setIsAddStoreAdminOpen] = useState(false);
   const [addStoreAdminForm, setAddStoreAdminForm] = useState({ name: "", email: "", password: "", phone: "", storeId: "" });
   const [addStoreAdminError, setAddStoreAdminError] = useState("");
@@ -180,10 +195,14 @@ export default function AdminDashboard() {
   };
 
   const fetchStores = async () => {
-    const res = await fetch("http://localhost:5001/api/orders/stores");
-    if (res.ok) {
-      const data = await res.json();
-      setStores(data);
+    try {
+      const res = await fetch("http://localhost:5001/api/stores");
+      if (res.ok) {
+        const data = await res.json();
+        setStores(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch stores", e);
     }
   };
 
@@ -328,13 +347,102 @@ export default function AdminDashboard() {
 
   const deleteStoreAdmin = async (id: number) => {
     setDeletingStoreAdminId(id);
-    const res = await fetch(`http://localhost:5001/api/store-admins/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-    });
-    if (res.ok) setStoreAdmins((prev) => prev.filter((sa) => sa.id !== id));
-    setDeletingStoreAdminId(null);
-    setDeleteStoreAdminConfirmId(null);
+    try {
+      const res = await fetch(`http://localhost:5001/api/store-admins/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        setStoreAdmins(prev => prev.filter(sa => sa.id !== id));
+      } else {
+        alert("Failed to delete store admin");
+      }
+    } catch {
+      alert("Error deleting store admin");
+    } finally {
+      setDeletingStoreAdminId(null);
+      setDeleteStoreAdminConfirmId(null);
+    }
+  };
+
+  const createStore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStoreName.trim() || !newStoreAddress.trim()) {
+      setAddStoreError("Store name and address are required.");
+      return;
+    }
+
+    setIsAddingStore(true);
+    setAddStoreError("");
+    try {
+      const res = await fetch("http://localhost:5001/api/stores", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          name: newStoreName,
+          address: newStoreAddress,
+          latitude: parseFloat(newStoreLat) || 12.9716,
+          longitude: parseFloat(newStoreLng) || 77.5946,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        setAddStoreError(data.error || "Failed to create store hub");
+      } else {
+        setIsAddStoreOpen(false);
+        setNewStoreName("");
+        setNewStoreAddress("");
+        fetchStores();
+      }
+    } catch {
+      setAddStoreError("Network error. Please try again.");
+    } finally {
+      setIsAddingStore(false);
+    }
+  };
+
+  const deleteStore = async (id: string) => {
+    setDeletingStoreId(id);
+    try {
+      const res = await fetch(`http://localhost:5001/api/stores/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        fetchStores();
+      } else {
+        alert("Failed to delete store hub");
+      }
+    } catch {
+      alert("Error deleting store hub");
+    } finally {
+      setDeletingStoreId(null);
+      setDeleteStoreConfirmId(null);
+    }
+  };
+
+  const clearAllStores = async () => {
+    if (!confirm("Are you sure you want to clear all store hubs? This will unassign store hubs from riders and admins.")) return;
+    setIsClearingStores(true);
+    try {
+      const res = await fetch("http://localhost:5001/api/stores/clear-all", {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (res.ok) {
+        fetchStores();
+      } else {
+        alert("Failed to clear stores");
+      }
+    } catch {
+      alert("Error clearing stores");
+    } finally {
+      setIsClearingStores(false);
+    }
   };
 
   const updateStatus = async (id: number, status: string) => {
@@ -465,7 +573,8 @@ export default function AdminDashboard() {
           <NavItem view="customers"    icon="group"          label="Customers"  />
           <NavItem view="services"     icon="dry_cleaning"   label="Services"   />
           <NavItem view="riders"       icon="two_wheeler"    label="Riders"     />
-          <NavItem view="store-admins" icon="badge" label="Store Admins" />
+          <NavItem view="store-admins" icon="badge"          label="Store Admins" />
+          <NavItem view="stores"       icon="store"          label="Store Hubs" />
           <button className="w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span className="material-symbols-outlined mr-4">settings</span>Settings
           </button>
@@ -1419,6 +1528,226 @@ export default function AdminDashboard() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ STORES MANAGEMENT VIEW ══════════ */}
+          {activeView === "stores" && (
+            <div className="space-y-6">
+              {/* Header & Controls */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm">
+                <div>
+                  <h2 className="text-xl font-bold text-on-surface">Store Hubs</h2>
+                  <p className="text-sm text-on-surface-variant">Manage physical laundry hubs, locations, and assignments</p>
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-64">
+                    <span className="material-symbols-outlined absolute left-3 top-3 text-outline text-[20px]">search</span>
+                    <input
+                      type="text"
+                      placeholder="Search store hubs…"
+                      value={storeSearch}
+                      onChange={(e) => setStoreSearch(e.target.value)}
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  {stores.length > 0 && (
+                    <button
+                      onClick={clearAllStores}
+                      disabled={isClearingStores}
+                      className="bg-error/10 text-error hover:bg-error/20 border border-error/30 text-xs font-bold px-4 py-3 rounded-xl transition-all flex items-center gap-1.5 flex-shrink-0"
+                      title="Clear all seeded stores"
+                    >
+                      <span className="material-symbols-outlined text-base">delete_sweep</span>
+                      Clear All
+                    </button>
+                  )}
+                  <button
+                    onClick={() => {
+                      setIsAddStoreOpen(true);
+                      setAddStoreError("");
+                    }}
+                    className="bg-primary text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md hover:bg-primary/90 transition-all flex items-center gap-2 flex-shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-base">add_location_alt</span>
+                    Add Store Hub
+                  </button>
+                </div>
+              </div>
+
+              {/* Stores Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {stores.filter(s => !storeSearch || s.name.toLowerCase().includes(storeSearch.toLowerCase()) || s.address.toLowerCase().includes(storeSearch.toLowerCase())).length === 0 ? (
+                  <div className="col-span-full bg-surface-container-lowest p-12 rounded-2xl border border-outline-variant/30 text-center text-on-surface-variant">
+                    <span className="material-symbols-outlined text-4xl text-outline mb-2">storefront</span>
+                    <p className="font-semibold text-sm mb-1">No store hubs found.</p>
+                    <p className="text-xs text-outline mb-4">Add custom stores to dynamically route pickup & delivery orders.</p>
+                    <button
+                      onClick={() => setIsAddStoreOpen(true)}
+                      className="bg-primary text-white text-xs font-bold px-4 py-2 rounded-xl shadow-sm inline-flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-base">add</span>
+                      Create First Store
+                    </button>
+                  </div>
+                ) : (
+                  stores
+                    .filter(s => !storeSearch || s.name.toLowerCase().includes(storeSearch.toLowerCase()) || s.address.toLowerCase().includes(storeSearch.toLowerCase()))
+                    .map((s) => (
+                      <div key={s.id} className="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant/30 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow">
+                        <div>
+                          <div className="flex items-start justify-between gap-3 mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold">
+                                <span className="material-symbols-outlined text-xl">store</span>
+                              </div>
+                              <div>
+                                <h3 className="font-bold text-on-surface text-base">{s.name}</h3>
+                                <p className="text-[11px] text-outline font-mono">ID: {s.id.slice(0, 8)}…</p>
+                              </div>
+                            </div>
+                            {deleteStoreConfirmId === s.id ? (
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => deleteStore(s.id)}
+                                  disabled={deletingStoreId === s.id}
+                                  className="text-[11px] font-bold bg-error text-white px-2.5 py-1 rounded-lg"
+                                >
+                                  Yes
+                                </button>
+                                <button
+                                  onClick={() => setDeleteStoreConfirmId(null)}
+                                  className="text-[11px] font-bold bg-gray-200 text-gray-700 px-2.5 py-1 rounded-lg"
+                                >
+                                  No
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => setDeleteStoreConfirmId(s.id)}
+                                className="p-1.5 text-error hover:bg-error/10 rounded-lg transition-colors"
+                                title="Delete Store Hub"
+                              >
+                                <span className="material-symbols-outlined text-[20px]">delete</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <p className="text-xs text-on-surface-variant line-clamp-2 mb-4 leading-relaxed">
+                            <span className="material-symbols-outlined text-sm align-middle mr-1 text-outline">location_on</span>
+                            {s.address}
+                          </p>
+                        </div>
+
+                        <div className="pt-4 border-t border-outline-variant/20 flex items-center justify-between text-xs">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-lg font-bold border border-indigo-100">
+                              {(s._count as any)?.riders || 0} Riders
+                            </span>
+                            <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-lg font-bold border border-emerald-100">
+                              {(s._count as any)?.storeAdmins || 0} Admins
+                            </span>
+                          </div>
+                          <span className="text-[11px] text-outline font-mono">
+                            {s.latitude ? `${s.latitude.toFixed(2)}, ${s.longitude?.toFixed(2)}` : "No GPS"}
+                          </span>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Add New Store Hub Modal */}
+          {isAddStoreOpen && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6 animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <div>
+                    <h3 className="text-lg font-bold text-on-surface">Add Store Hub</h3>
+                    <p className="text-xs text-outline">Create a dynamic physical hub location</p>
+                  </div>
+                  <button onClick={() => setIsAddStoreOpen(false)} className="text-outline hover:text-on-surface p-1 rounded-full hover:bg-slate-100">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                {addStoreError && (
+                  <div className="p-3 rounded-xl bg-error/10 border border-error/20 text-error text-xs font-semibold">
+                    {addStoreError}
+                  </div>
+                )}
+
+                <form onSubmit={createStore} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-on-surface-variant mb-1">Store Name *</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Whitefield Hub 2"
+                      value={newStoreName}
+                      onChange={(e) => setNewStoreName(e.target.value)}
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-on-surface-variant mb-1">Full Address *</label>
+                    <textarea
+                      required
+                      rows={3}
+                      placeholder="Street, Landmark, City, Pincode"
+                      value={newStoreAddress}
+                      onChange={(e) => setNewStoreAddress(e.target.value)}
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase text-on-surface-variant mb-1">Latitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="12.9716"
+                        value={newStoreLat}
+                        onChange={(e) => setNewStoreLat(e.target.value)}
+                        className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold uppercase text-on-surface-variant mb-1">Longitude</label>
+                      <input
+                        type="number"
+                        step="any"
+                        placeholder="77.5946"
+                        value={newStoreLng}
+                        onChange={(e) => setNewStoreLng(e.target.value)}
+                        className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-3 pt-4 border-t">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddStoreOpen(false)}
+                      className="px-4 py-2 text-xs font-bold text-on-surface-variant hover:bg-surface-container rounded-xl transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isAddingStore}
+                      className="px-5 py-2 text-xs font-bold bg-primary text-white rounded-xl shadow-md hover:bg-primary/90 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      <span className="material-symbols-outlined text-base">save</span>
+                      Save Hub
+                    </button>
+                  </div>
+                </form>
               </div>
             </div>
           )}
