@@ -43,6 +43,7 @@ type Rider = {
   stores?: { id: string; name: string }[];
   createdAt: string;
   _count: { deliveries: number };
+  verificationCode?: string;
 };
 
 type StoreObj = {
@@ -450,7 +451,7 @@ export default function AdminDashboard() {
   return (
     <div className="bg-background text-on-surface min-h-screen" style={{ fontFamily: "Work Sans, sans-serif" }}>
       {/* ─── Sidebar ─── */}
-      <aside className="fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex flex-col shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-72 bg-surface-container-low z-50 flex-col shadow-[1px_0_8px_rgba(0,0,0,0.04)]">
         <div className="p-8 flex items-center gap-3">
           <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-lg">
             <span className="material-symbols-outlined text-white">local_laundry_service</span>
@@ -459,12 +460,12 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 px-4 mt-4 space-y-2">
-          <NavItem view="dashboard"    icon="dashboard"      label="Dashboard text-left"  />
+          <NavItem view="dashboard"    icon="dashboard"      label="Dashboard"  />
           <NavItem view="orders"       icon="list_alt"       label="Orders"     />
           <NavItem view="customers"    icon="group"          label="Customers"  />
           <NavItem view="services"     icon="dry_cleaning"   label="Services"   />
           <NavItem view="riders"       icon="two_wheeler"    label="Riders"     />
-          <NavItem view="store-admins" icon="badge text-left" label="Store Admins" />
+          <NavItem view="store-admins" icon="badge" label="Store Admins" />
           <button className="w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span className="material-symbols-outlined mr-4">settings</span>Settings
           </button>
@@ -476,11 +477,11 @@ export default function AdminDashboard() {
       </aside>
 
       {/* ─── Right column ─── */}
-      <div className="pl-72">
+      <div className="md:pl-72">
         {/* ─── Top Header ─── */}
-        <header className="fixed top-0 left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-6">
+        <header className="fixed top-0 left-0 md:left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-6">
           {/* Search */}
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-outline-variant/30 w-96">
+          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-outline-variant/30 w-full md:w-96">
             <span className="material-symbols-outlined text-outline">search</span>
             <input
               className="bg-transparent border-none outline-none text-sm w-full placeholder:text-outline"
@@ -497,7 +498,7 @@ export default function AdminDashboard() {
               <span className="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full" />
             </button>
 
-            <div className="pl-6 border-l border-outline-variant/30">
+            <div className="hidden md:block pl-6 border-l border-outline-variant/30">
               <ProfileDropdown />
             </div>
           </div>
@@ -809,11 +810,11 @@ export default function AdminDashboard() {
                   <table className="w-full text-left border-collapse">
                     <thead>
                       <tr className="bg-surface-container text-on-surface-variant">
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Order ID</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Order</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Customer</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Service</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Pickup Date</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Address</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Auth Code</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Pickup</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Update</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Delete</th>
@@ -850,8 +851,18 @@ export default function AdminDashboard() {
                                 </div>
                               </div>
                             </td>
-                            <td className="px-6 py-5 text-sm text-on-surface">{o.serviceType || "—"}</td>
                             <td className="px-6 py-5">
+                              <span className="inline-block px-2.5 py-0.5 bg-surface-container-high text-on-surface text-[11px] font-bold rounded-lg border border-outline-variant/30 mb-1">
+                                {o.serviceType || "Laundry"}
+                              </span>
+                              <p className="text-xs text-outline line-clamp-1 max-w-[140px]">{o.itemsDescription}</p>
+                            </td>
+                            <td className="px-6 py-5">
+                              <span className="font-mono font-bold text-primary bg-primary-container/30 px-2 py-1 rounded border border-primary/20 text-xs">
+                                {o.verificationCode || "----"}
+                              </span>
+                            </td>
+                            <td className="px-6 py-5 whitespace-nowrap text-sm text-on-surface-variant">
                               <span className="text-sm text-on-surface">
                                 {o.pickupDate
                                   ? new Date(o.pickupDate).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
@@ -1359,10 +1370,12 @@ export default function AdminDashboard() {
                               <td className="px-6 py-4 text-sm text-on-surface-variant font-mono">{sa.email}</td>
                               <td className="px-6 py-4 text-sm text-on-surface-variant">{sa.phone || "—"}</td>
                               <td className="px-6 py-4">
-                                <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold border border-indigo-200 inline-flex items-center gap-1.5">
-                                  <span className="material-symbols-outlined text-sm">store</span>
-                                  {sa.store?.name || "Unassigned"}
-                                </span>
+                                <div className="text-left">
+                                  <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold border border-indigo-200 inline-flex items-center gap-1.5 text-left">
+                                    <span className="material-symbols-outlined text-sm">store</span>
+                                    {sa.store?.name || "Unassigned"}
+                                  </span>
+                                </div>
                               </td>
                               <td className="px-6 py-4 text-center">
                                 <div className="flex items-center justify-center gap-2">

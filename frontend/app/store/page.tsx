@@ -53,6 +53,7 @@ export default function StoreAdminDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
   const [verificationCodeInputs, setVerificationCodeInputs] = useState<Record<number, string>>({});
+  const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<OrderItem | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
@@ -360,7 +361,15 @@ export default function StoreAdminDashboard() {
 
                       return (
                         <tr key={o.id} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="px-6 py-4 font-mono font-bold text-indigo-600">#{o.id}</td>
+                          <td className="px-6 py-4 font-mono font-bold text-indigo-600">
+                            <button
+                              onClick={() => setSelectedHistoryOrder(o)}
+                              className="hover:underline flex items-center gap-1"
+                              title="View full history & details"
+                            >
+                              #{String(o.id).padStart(4, "0")}
+                            </button>
+                          </td>
                           <td className="px-6 py-4">
                             <p className="font-bold text-slate-900">{o.customer?.name}</p>
                             <p className="text-xs text-slate-500 font-mono">{o.customer?.phone || o.customer?.email}</p>
@@ -371,6 +380,11 @@ export default function StoreAdminDashboard() {
                               {o.serviceType || "Laundry Service"}
                             </span>
                             <p className="text-xs text-slate-600 line-clamp-1">{o.itemsDescription}</p>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
+                              {o.verificationCode || "----"}
+                            </span>
                           </td>
                           <td className="px-6 py-4">
                             {o.rider ? (
@@ -484,6 +498,137 @@ export default function StoreAdminDashboard() {
             )}
           </div>
         )}
+
+        {/* ══════════ ORDER HISTORY MODAL ══════════ */}
+        {selectedHistoryOrder && (
+          <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl p-6 md:p-8 max-w-2xl w-full shadow-2xl animate-in fade-in zoom-in duration-200 overflow-y-auto max-h-[90vh]">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Order Details & Timeline</h2>
+                  <p className="text-sm text-slate-500 font-mono">Order #{String(selectedHistoryOrder.id).padStart(4, "0")}</p>
+                </div>
+                <button onClick={() => setSelectedHistoryOrder(null)} className="text-slate-400 hover:text-slate-900 transition-colors p-2 rounded-full hover:bg-slate-100">
+                  <span className="material-symbols-outlined">close</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Details Section */}
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b pb-2">Order Information</h3>
+                  
+                  <div>
+                    <p className="text-xs text-slate-500 font-semibold mb-1">Customer</p>
+                    <p className="text-sm font-bold text-slate-900">{selectedHistoryOrder.customer.name}</p>
+                    <p className="text-xs text-slate-600">{selectedHistoryOrder.customer.phone || selectedHistoryOrder.customer.email}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-slate-500 font-semibold mb-1">Pickup Address</p>
+                    <p className="text-sm text-slate-800">{selectedHistoryOrder.pickupAddress}</p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs text-slate-500 font-semibold mb-1">Service & Items</p>
+                    <span className="inline-block px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg mb-1">{selectedHistoryOrder.serviceType}</span>
+                    <p className="text-sm text-slate-700">{selectedHistoryOrder.itemsDescription}</p>
+                  </div>
+                  
+                  <div>
+                    <p className="text-xs text-slate-500 font-semibold mb-1">Verification Code</p>
+                    <span className="font-mono font-bold text-lg text-indigo-600 bg-indigo-50 px-3 py-1 rounded-xl border border-indigo-100">
+                      {selectedHistoryOrder.verificationCode || "----"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Timeline Section */}
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-slate-400 border-b pb-2 mb-4">Lifecycle Timeline</h3>
+                  <div className="relative border-l-2 border-indigo-200 ml-3 pl-6 space-y-6">
+                    {/* Created */}
+                    <div className="relative">
+                      <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-indigo-600 flex items-center justify-center border-4 border-white shadow-sm" />
+                      <p className="text-xs font-bold text-slate-500 uppercase">Order Placed</p>
+                      <p className="text-sm text-slate-900 font-semibold">
+                        {new Date(selectedHistoryOrder.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                    </div>
+
+                    {/* Picked Up */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${(selectedHistoryOrder as any).pickedUpAt ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                      <p className="text-xs font-bold text-slate-500 uppercase">Picked Up by Rider</p>
+                      {(selectedHistoryOrder as any).pickedUpAt ? (
+                        <>
+                          <p className="text-sm text-slate-900 font-semibold">
+                            {new Date((selectedHistoryOrder as any).pickedUpAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          <p className="text-xs text-slate-600">Rider: {selectedHistoryOrder.rider?.name || 'Unknown'}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">Pending...</p>
+                      )}
+                    </div>
+
+                    {/* Received at Store */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${(selectedHistoryOrder as any).receivedAtStoreAt ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                      <p className="text-xs font-bold text-slate-500 uppercase">Received at Store Hub</p>
+                      {(selectedHistoryOrder as any).receivedAtStoreAt ? (
+                        <p className="text-sm text-slate-900 font-semibold">
+                          {new Date((selectedHistoryOrder as any).receivedAtStoreAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">Pending...</p>
+                      )}
+                    </div>
+
+                    {/* Ready for Delivery */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${(selectedHistoryOrder as any).readyForDeliveryAt ? 'bg-indigo-600' : 'bg-slate-200'}`} />
+                      <p className="text-xs font-bold text-slate-500 uppercase">Ready for Delivery</p>
+                      {(selectedHistoryOrder as any).readyForDeliveryAt ? (
+                        <p className="text-sm text-slate-900 font-semibold">
+                          {new Date((selectedHistoryOrder as any).readyForDeliveryAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">Pending...</p>
+                      )}
+                    </div>
+
+                    {/* Delivered */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${(selectedHistoryOrder as any).deliveredAt ? 'bg-emerald-500' : 'bg-slate-200'}`} />
+                      <p className="text-xs font-bold text-slate-500 uppercase">Delivered & Complete</p>
+                      {(selectedHistoryOrder as any).deliveredAt ? (
+                        <>
+                          <p className="text-sm text-slate-900 font-semibold">
+                            {new Date((selectedHistoryOrder as any).deliveredAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          <p className="text-xs text-slate-600">Delivered by: {(selectedHistoryOrder as any).deliveryRider?.name || selectedHistoryOrder.rider?.name || 'Unknown'}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-slate-400 italic">Pending...</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-6 mt-6 border-t flex justify-end">
+                <button
+                  onClick={() => setSelectedHistoryOrder(null)}
+                  className="px-6 py-2 bg-slate-100 text-slate-700 font-bold rounded-xl hover:bg-slate-200 transition-all"
+                >
+                  Close Details
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </main>
     </div>
   );
