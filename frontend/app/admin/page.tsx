@@ -45,11 +45,22 @@ type StoreObj = {
   address: string;
 };
 
-type ActiveView = "dashboard" | "orders" | "customers" | "services" | "riders";
+type ActiveView = "dashboard" | "orders" | "customers" | "services" | "riders" | "store-admins";
+
+type StoreAdmin = {
+  id: number;
+  name: string;
+  email: string;
+  phone?: string;
+  storeId?: string;
+  store?: { id: string; name: string; address?: string };
+  createdAt: string;
+};
 
 const STATUS_STYLES: Record<string, string> = {
   PENDING:              "bg-secondary-container text-on-secondary-container",
   PICKED_UP:            "bg-primary-container text-on-primary-container",
+  RECEIVED_AT_STORE:    "bg-indigo-100 text-indigo-800 font-bold border border-indigo-200",
   IN_WASHING:           "bg-surface-variant text-on-surface-variant",
   READY_FOR_DELIVERY:   "bg-tertiary-container text-on-tertiary-container",
   DELIVERED:            "bg-primary text-white",
@@ -59,6 +70,7 @@ const STATUS_STYLES: Record<string, string> = {
 const STATUS_LABEL: Record<string, string> = {
   PENDING:            "Pending",
   PICKED_UP:          "Picked Up",
+  RECEIVED_AT_STORE:  "At Store Hub",
   IN_WASHING:         "In Progress",
   READY_FOR_DELIVERY: "Ready",
   DELIVERED:          "Completed",
@@ -113,6 +125,16 @@ export default function AdminDashboard() {
   const [editRiderForm, setEditRiderForm] = useState<{ name: string; email: string; phone: string; storeIds: string[]; password: string }>({ name: "", email: "", phone: "", storeIds: [], password: "" });
   const [deletingRiderId, setDeletingRiderId] = useState<number | null>(null);
   const [deleteRiderConfirmId, setDeleteRiderConfirmId] = useState<number | null>(null);
+  // Store Admins state
+  const [storeAdmins, setStoreAdmins] = useState<StoreAdmin[]>([]);
+  const [storeAdminSearch, setStoreAdminSearch] = useState("");
+  const [isAddStoreAdminOpen, setIsAddStoreAdminOpen] = useState(false);
+  const [addStoreAdminForm, setAddStoreAdminForm] = useState({ name: "", email: "", password: "", phone: "", storeId: "" });
+  const [addStoreAdminError, setAddStoreAdminError] = useState("");
+  const [editingStoreAdmin, setEditingStoreAdmin] = useState<StoreAdmin | null>(null);
+  const [editStoreAdminForm, setEditStoreAdminForm] = useState({ name: "", email: "", phone: "", storeId: "", password: "" });
+  const [deletingStoreAdminId, setDeletingStoreAdminId] = useState<number | null>(null);
+  const [deleteStoreAdminConfirmId, setDeleteStoreAdminConfirmId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
@@ -126,6 +148,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     if (activeView === "customers" && user?.role === "ADMIN") fetchCustomers();
     if (activeView === "riders" && user?.role === "ADMIN") fetchRiders();
+    if (activeView === "store-admins" && user?.role === "ADMIN") fetchStoreAdmins();
   }, [activeView]);
 
   const fetchOrders = async () => {
@@ -234,6 +257,76 @@ export default function AdminDashboard() {
     if (res.ok) setRiders((prev) => prev.filter((r) => r.id !== id));
     setDeletingRiderId(null);
     setDeleteRiderConfirmId(null);
+  };
+
+  const fetchStoreAdmins = async () => {
+    const res = await fetch("http://localhost:5001/api/store-admins", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setStoreAdmins(data);
+    }
+  };
+
+  const createStoreAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAddStoreAdminError("");
+    const res = await fetch("http://localhost:5001/api/store-admins", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(addStoreAdminForm),
+    });
+
+    if (res.ok) {
+      setIsAddStoreAdminOpen(false);
+      setAddStoreAdminForm({ name: "", email: "", password: "", phone: "", storeId: "" });
+      fetchStoreAdmins();
+    } else {
+      const err = await res.json();
+      setAddStoreAdminError(err.error || "Failed to register store admin");
+    }
+  };
+
+  const openEditStoreAdmin = (sa: StoreAdmin) => {
+    setEditingStoreAdmin(sa);
+    setEditStoreAdminForm({
+      name: sa.name,
+      email: sa.email,
+      phone: sa.phone || "",
+      storeId: sa.storeId || sa.store?.id || "",
+      password: "",
+    });
+  };
+
+  const saveStoreAdmin = async () => {
+    if (!editingStoreAdmin) return;
+    const res = await fetch(`http://localhost:5001/api/store-admins/${editingStoreAdmin.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify(editStoreAdminForm),
+    });
+    if (res.ok) {
+      setEditingStoreAdmin(null);
+      fetchStoreAdmins();
+    }
+  };
+
+  const deleteStoreAdmin = async (id: number) => {
+    setDeletingStoreAdminId(id);
+    const res = await fetch(`http://localhost:5001/api/store-admins/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    if (res.ok) setStoreAdmins((prev) => prev.filter((sa) => sa.id !== id));
+    setDeletingStoreAdminId(null);
+    setDeleteStoreAdminConfirmId(null);
   };
 
   const updateStatus = async (id: number, status: string) => {
@@ -359,11 +452,12 @@ export default function AdminDashboard() {
         </div>
 
         <nav className="flex-1 px-4 mt-4 space-y-2">
-          <NavItem view="dashboard"  icon="dashboard"      label="Dashboard"  />
-          <NavItem view="orders"     icon="list_alt"       label="Orders"     />
-          <NavItem view="customers"  icon="group"          label="Customers"  />
-          <NavItem view="services"   icon="dry_cleaning"   label="Services"   />
-          <NavItem view="riders"     icon="two_wheeler"    label="Riders"     />
+          <NavItem view="dashboard"    icon="dashboard"      label="Dashboard text-left"  />
+          <NavItem view="orders"       icon="list_alt"       label="Orders"     />
+          <NavItem view="customers"    icon="group"          label="Customers"  />
+          <NavItem view="services"     icon="dry_cleaning"   label="Services"   />
+          <NavItem view="riders"       icon="two_wheeler"    label="Riders"     />
+          <NavItem view="store-admins" icon="badge text-left" label="Store Admins" />
           <button className="w-full flex items-center px-4 py-3 rounded-lg text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all text-left">
             <span className="material-symbols-outlined mr-4">settings</span>Settings
           </button>
@@ -1178,6 +1272,294 @@ export default function AdminDashboard() {
                       )}
                     </tbody>
                   </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ══════════ STORE ADMINS VIEW ══════════ */}
+          {activeView === "store-admins" && (
+            <div className="flex flex-col gap-8">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold text-on-surface">Store Hub Admins ({storeAdmins.length})</h2>
+                  <p className="text-sm text-outline">Create and manage store branch admins who oversee local orders and rider handoffs.</p>
+                </div>
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <div className="relative flex-1 sm:w-64">
+                    <span className="material-symbols-outlined absolute left-3 top-3 text-outline text-[20px]">search</span>
+                    <input
+                      type="text"
+                      placeholder="Search store admins…"
+                      value={storeAdminSearch}
+                      onChange={(e) => setStoreAdminSearch(e.target.value)}
+                      className="w-full bg-surface-container-lowest border border-outline-variant rounded-xl pl-10 pr-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      setIsAddStoreAdminOpen(true);
+                      setAddStoreAdminError("");
+                    }}
+                    className="bg-primary text-white text-xs font-bold px-5 py-3 rounded-xl shadow-md hover:bg-primary/90 transition-all flex items-center gap-2 flex-shrink-0"
+                  >
+                    <span className="material-symbols-outlined text-base">badge</span>
+                    Register Store Admin
+                  </button>
+                </div>
+              </div>
+
+              <div className="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/30 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-surface-container-low border-b border-outline-variant/20 text-on-surface-variant">
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">ID</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Admin Name</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Login Email</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Phone</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Assigned Store Hub</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-outline-variant/10">
+                      {storeAdmins.filter(sa => !storeAdminSearch || sa.name.toLowerCase().includes(storeAdminSearch.toLowerCase()) || sa.email.toLowerCase().includes(storeAdminSearch.toLowerCase()) || (sa.store?.name || "").toLowerCase().includes(storeAdminSearch.toLowerCase())).length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="px-6 py-12 text-center text-on-surface-variant font-semibold">
+                            No store admins registered yet. Click &quot;Register Store Admin&quot; to create credentials.
+                          </td>
+                        </tr>
+                      ) : (
+                        storeAdmins
+                          .filter(sa => !storeAdminSearch || sa.name.toLowerCase().includes(storeAdminSearch.toLowerCase()) || sa.email.toLowerCase().includes(storeAdminSearch.toLowerCase()) || (sa.store?.name || "").toLowerCase().includes(storeAdminSearch.toLowerCase()))
+                          .map((sa, idx) => (
+                            <tr key={sa.id} className="hover:bg-surface-container-low transition-colors">
+                              <td className="px-6 py-4 font-mono text-xs text-primary font-bold">#{sa.id}</td>
+                              <td className="px-6 py-4">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${AVATAR_COLORS[idx % AVATAR_COLORS.length]}`}>
+                                    {initials(sa.name)}
+                                  </div>
+                                  <span className="font-semibold text-sm text-on-surface">{sa.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 text-sm text-on-surface-variant font-mono">{sa.email}</td>
+                              <td className="px-6 py-4 text-sm text-on-surface-variant">{sa.phone || "—"}</td>
+                              <td className="px-6 py-4">
+                                <span className="px-3 py-1 rounded-full bg-indigo-100 text-indigo-800 text-xs font-bold border border-indigo-200 inline-flex items-center gap-1.5">
+                                  <span className="material-symbols-outlined text-sm">store</span>
+                                  {sa.store?.name || "Unassigned"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 text-center">
+                                <div className="flex items-center justify-center gap-2">
+                                  <button
+                                    onClick={() => openEditStoreAdmin(sa)}
+                                    className="p-1.5 rounded-lg text-primary hover:bg-primary/10 transition-all"
+                                    title="Edit store admin details / password"
+                                  >
+                                    <span className="material-symbols-outlined text-[20px]">edit</span>
+                                  </button>
+                                  {deleteStoreAdminConfirmId === sa.id ? (
+                                    <div className="flex items-center gap-1">
+                                      <button
+                                        onClick={() => deleteStoreAdmin(sa.id)}
+                                        disabled={deletingStoreAdminId === sa.id}
+                                        className="text-[11px] font-bold bg-error text-white px-2 py-1 rounded-lg"
+                                      >
+                                        Yes
+                                      </button>
+                                      <button
+                                        onClick={() => setDeleteStoreAdminConfirmId(null)}
+                                        className="text-[11px] font-bold bg-gray-200 text-gray-700 px-2 py-1 rounded-lg"
+                                      >
+                                        No
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <button
+                                      onClick={() => setDeleteStoreAdminConfirmId(sa.id)}
+                                      className="p-1.5 rounded-lg text-error hover:bg-error/10 transition-all"
+                                      title="Delete store admin"
+                                    >
+                                      <span className="material-symbols-outlined text-[20px]">delete</span>
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Register New Store Admin Modal */}
+          {isAddStoreAdminOpen && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <h3 className="text-lg font-bold text-on-surface">Register Store Admin</h3>
+                  <button onClick={() => setIsAddStoreAdminOpen(false)} className="text-outline hover:text-on-surface">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                {addStoreAdminError && (
+                  <div className="p-3 rounded-xl bg-error/10 text-error text-xs font-semibold">{addStoreAdminError}</div>
+                )}
+
+                <form onSubmit={createStoreAdmin} className="space-y-4 text-sm">
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rahul Sharma"
+                      value={addStoreAdminForm.name}
+                      onChange={(e) => setAddStoreAdminForm({ ...addStoreAdminForm, name: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Login Email</label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="e.g. rahul.koramangala@laundry.com"
+                      value={addStoreAdminForm.email}
+                      onChange={(e) => setAddStoreAdminForm({ ...addStoreAdminForm, email: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Initial Password</label>
+                    <input
+                      type="password"
+                      required
+                      placeholder="••••••••"
+                      value={addStoreAdminForm.password}
+                      onChange={(e) => setAddStoreAdminForm({ ...addStoreAdminForm, password: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. +91 98765 43210"
+                      value={addStoreAdminForm.phone}
+                      onChange={(e) => setAddStoreAdminForm({ ...addStoreAdminForm, phone: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Assigned Store Hub</label>
+                    <select
+                      value={addStoreAdminForm.storeId}
+                      onChange={(e) => setAddStoreAdminForm({ ...addStoreAdminForm, storeId: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 text-gray-900 bg-white"
+                    >
+                      <option value="">-- Select Store Branch --</option>
+                      {stores.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="flex gap-3 pt-4 border-t">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddStoreAdminOpen(false)}
+                      className="flex-1 py-2.5 bg-gray-100 font-bold text-xs rounded-xl text-gray-700"
+                    >
+                      Cancel
+                    </button>
+                    <button type="submit" className="flex-1 py-2.5 bg-primary text-white font-bold text-xs rounded-xl shadow-md">
+                      Create Credentials
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Store Admin Modal */}
+          {editingStoreAdmin && (
+            <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full shadow-2xl space-y-6">
+                <div className="flex justify-between items-center border-b pb-4">
+                  <h3 className="text-lg font-bold text-on-surface">Edit Store Admin Credentials</h3>
+                  <button onClick={() => setEditingStoreAdmin(null)} className="text-outline hover:text-on-surface">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+                <div className="space-y-4 text-sm">
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Full Name</label>
+                    <input
+                      type="text"
+                      value={editStoreAdminForm.name}
+                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, name: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Email</label>
+                    <input
+                      type="email"
+                      value={editStoreAdminForm.email}
+                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, email: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Phone</label>
+                    <input
+                      type="text"
+                      value={editStoreAdminForm.phone}
+                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, phone: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">Assigned Store Hub</label>
+                    <select
+                      value={editStoreAdminForm.storeId}
+                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, storeId: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5 bg-white"
+                    >
+                      <option value="">-- Unassigned --</option>
+                      {stores.map((s) => (
+                        <option key={s.id} value={s.id}>
+                          {s.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block font-bold text-xs uppercase text-outline mb-1">New Password (Optional)</label>
+                    <input
+                      type="password"
+                      placeholder="Leave blank to keep current password"
+                      value={editStoreAdminForm.password}
+                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, password: e.target.value })}
+                      className="w-full border rounded-xl px-4 py-2.5"
+                    />
+                  </div>
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <button onClick={() => setEditingStoreAdmin(null)} className="flex-1 py-2.5 bg-gray-100 font-bold text-xs rounded-xl">
+                    Cancel
+                  </button>
+                  <button onClick={saveStoreAdmin} className="flex-1 py-2.5 bg-primary text-white font-bold text-xs rounded-xl">
+                    Save Changes
+                  </button>
                 </div>
               </div>
             </div>

@@ -27,6 +27,7 @@ const STATUS_BADGES: Record<string, { label: string; style: string }> = {
   PENDING_PICKUP:     { label: "Pending Pickup", style: "bg-amber-100 text-amber-800 font-bold" },
   RIDER_ASSIGNED:     { label: "En Route",        style: "bg-sky-100 text-sky-800 font-bold" },
   PICKED_UP:          { label: "Picked Up",       style: "bg-purple-100 text-purple-800 font-bold" },
+  RECEIVED_AT_STORE:  { label: "Received at Store", style: "bg-emerald-100 text-emerald-800 font-bold border border-emerald-300" },
   IN_WASHING:         { label: "In Washing",      style: "bg-indigo-100 text-indigo-800 font-bold" },
   IN_LAUNDRY:         { label: "In Washing",      style: "bg-indigo-100 text-indigo-800 font-bold" },
   READY_FOR_DELIVERY: { label: "Out for Delivery",style: "bg-teal-100 text-teal-800 font-bold" },

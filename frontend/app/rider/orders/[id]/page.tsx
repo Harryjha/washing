@@ -26,7 +26,8 @@ type OrderDetail = {
 const STATUS_LABELS: Record<string, string> = {
   PENDING_PICKUP: "Pending Pickup",
   RIDER_ASSIGNED: "En Route to Customer",
-  PICKED_UP: "Picked Up",
+  PICKED_UP: "Picked Up (En Route to Store)",
+  RECEIVED_AT_STORE: "Received at Store Hub",
   IN_LAUNDRY: "In Laundry / Washing",
   READY_FOR_DELIVERY: "Out for Delivery",
   DELIVERED: "Completed & Delivered",
@@ -294,13 +295,17 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
             )}
 
             {order.status === "PICKED_UP" && (
-              <button
-                onClick={() => handleUpdateStatus("IN_LAUNDRY")}
-                disabled={updating}
-                className="w-full bg-purple-600 text-white font-bold text-xs py-3.5 rounded-2xl shadow-md hover:bg-purple-700 transition-all disabled:opacity-50"
-              >
-                Deliver to Store Hub
-              </button>
+              <div className="p-3 bg-purple-50 border border-purple-200 rounded-2xl text-purple-900 text-xs font-semibold flex items-center gap-2">
+                <span className="material-symbols-outlined text-purple-600">store</span>
+                <span>Picked up! Please deliver items to {order.store?.name || "the Store Hub"}. Store Admin will confirm receipt.</span>
+              </div>
+            )}
+
+            {order.status === "RECEIVED_AT_STORE" && (
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl text-emerald-900 text-xs font-bold flex items-center gap-2">
+                <span className="material-symbols-outlined text-emerald-600">verified</span>
+                <span>✓ Delivered to Store Hub. Store Admin has verified and confirmed receipt!</span>
+              </div>
             )}
 
             {order.status === "READY_FOR_DELIVERY" && (

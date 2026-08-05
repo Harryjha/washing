@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (data.user.role === "CUSTOMER") router.push("/customer");
       if (data.user.role === "RIDER") router.push("/rider");
       if (data.user.role === "ADMIN") router.push("/admin");
+      if (data.user.role === "STORE_ADMIN") router.push("/store");
 
       return true;
     }

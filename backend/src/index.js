@@ -6,6 +6,8 @@ const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
 const customerRoutes = require('./routes/customers');
 const riderRoutes = require('./routes/riders');
+const storeAdminRoutes = require('./routes/store-admins');
+const storeRoutes = require('./routes/store');
 
 const app = express();
 
@@ -16,6 +18,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/riders', riderRoutes);
+app.use('/api/store-admins', storeAdminRoutes);
+app.use('/api/store', storeRoutes);
 
 // Health check endpoint
 app.get('/health', (req, res) => {
