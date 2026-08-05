@@ -21,6 +21,7 @@ type Order = {
   receivedAtStoreAt?: string;
   readyForDeliveryAt?: string;
   deliveredAt?: string;
+  verificationCode?: string;
 };
 
 type Customer = {
@@ -43,7 +44,6 @@ type Rider = {
   stores?: { id: string; name: string }[];
   createdAt: string;
   _count: { deliveries: number };
-  verificationCode?: string;
 };
 
 type StoreObj = {
