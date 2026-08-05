@@ -15,6 +15,7 @@ type OrderItem = {
   customer: { id: number; name: string; email: string; phone?: string; address?: string };
   rider?: { id: number; name: string; email: string; phone?: string };
   store?: { id: string; name: string; address: string };
+  verificationCode?: string;
 };
 
 type StoreRider = {
@@ -51,6 +52,7 @@ export default function StoreAdminDashboard() {
   const [activeTab, setActiveTab] = useState<"orders" | "riders">("orders");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [updatingOrderId, setUpdatingOrderId] = useState<number | null>(null);
+  const [verificationCodeInputs, setVerificationCodeInputs] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
@@ -101,6 +103,12 @@ export default function StoreAdminDashboard() {
   };
 
   const handleConfirmReceive = async (orderId: number) => {
+    const code = verificationCodeInputs[orderId];
+    if (!code || code.length !== 4) {
+      alert("Please enter the 4-digit verification code provided by the rider.");
+      return;
+    }
+    
     setUpdatingOrderId(orderId);
     try {
       const token = localStorage.getItem("token");
@@ -110,9 +118,15 @@ export default function StoreAdminDashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
+        body: JSON.stringify({ verificationCode: code }),
       });
 
       if (res.ok) {
+        setVerificationCodeInputs(prev => {
+          const next = { ...prev };
+          delete next[orderId];
+          return next;
+        });
         // Refresh orders list
         await loadData();
       } else {
@@ -120,6 +134,30 @@ export default function StoreAdminDashboard() {
       }
     } catch (err) {
       console.error("Error receiving order:", err);
+    } finally {
+      setUpdatingOrderId(null);
+    }
+  };
+
+  const handleMarkReady = async (orderId: number) => {
+    setUpdatingOrderId(orderId);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5001/api/store/orders/${orderId}/ready`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        await loadData();
+      } else {
+        alert("Failed to mark order as ready.");
+      }
+    } catch (err) {
+      console.error("Error marking ready:", err);
     } finally {
       setUpdatingOrderId(null);
     }
@@ -307,6 +345,7 @@ export default function StoreAdminDashboard() {
                       <th className="px-6 py-4">Order ID</th>
                       <th className="px-6 py-4">Customer Details</th>
                       <th className="px-6 py-4">Service &amp; Items</th>
+                      <th className="px-6 py-4">Auth Code</th>
                       <th className="px-6 py-4">Assigned Rider</th>
                       <th className="px-6 py-4">Status</th>
                       <th className="px-6 py-4 text-center">Store Handover</th>
@@ -356,22 +395,51 @@ export default function StoreAdminDashboard() {
                           </td>
                           <td className="px-6 py-4 text-center">
                             {o.status === "PICKED_UP" ? (
-                              <button
-                                onClick={() => handleConfirmReceive(o.id)}
-                                disabled={updatingOrderId === o.id}
-                                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-200 transition-all flex items-center gap-1.5 mx-auto"
-                              >
-                                {updatingOrderId === o.id ? (
-                                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                ) : (
-                                  <span className="material-symbols-outlined text-base">check_circle</span>
-                                )}
-                                Confirm Store Receipt
-                              </button>
-                            ) : o.status === "RECEIVED_AT_STORE" ? (
-                              <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-                                <span className="material-symbols-outlined text-sm">verified</span>
-                                Received at Store
+                              <div className="flex flex-col gap-2 items-center">
+                                <input
+                                  type="text"
+                                  maxLength={4}
+                                  placeholder="4-digit code"
+                                  value={verificationCodeInputs[o.id] || ""}
+                                  onChange={(e) => setVerificationCodeInputs({ ...verificationCodeInputs, [o.id]: e.target.value.replace(/\D/g, '') })}
+                                  className="w-24 text-center border border-slate-300 rounded-lg py-1.5 text-xs font-mono font-bold outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500"
+                                />
+                                <button
+                                  onClick={() => handleConfirmReceive(o.id)}
+                                  disabled={updatingOrderId === o.id || (verificationCodeInputs[o.id]?.length !== 4)}
+                                  className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-200 transition-all flex items-center gap-1.5 mx-auto"
+                                >
+                                  {updatingOrderId === o.id ? (
+                                    <span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <span className="material-symbols-outlined text-[14px]">check_circle</span>
+                                  )}
+                                  Receive
+                                </button>
+                              </div>
+                            ) : ["RECEIVED_AT_STORE", "IN_WASHING", "IN_LAUNDRY"].includes(o.status) ? (
+                              <div className="flex flex-col gap-2 items-center">
+                                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                                  <span className="material-symbols-outlined text-[12px]">verified</span>
+                                  Received at Hub
+                                </span>
+                                <button
+                                  onClick={() => handleMarkReady(o.id)}
+                                  disabled={updatingOrderId === o.id}
+                                  className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-bold text-[10px] uppercase tracking-wider rounded-xl shadow-md shadow-indigo-200 transition-all mx-auto"
+                                >
+                                  {updatingOrderId === o.id ? "Updating..." : "Mark Ready"}
+                                </button>
+                              </div>
+                            ) : o.status === "READY_FOR_DELIVERY" ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-700 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                                <span className="material-symbols-outlined text-[12px]">local_shipping</span>
+                                Awaiting Delivery Pickup
+                              </span>
+                            ) : o.status === "DELIVERED" ? (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+                                <span className="material-symbols-outlined text-[12px]">done_all</span>
+                                Order Complete
                               </span>
                             ) : (
                               <span className="text-xs text-slate-400">—</span>

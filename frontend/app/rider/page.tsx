@@ -17,6 +17,7 @@ type OrderTask = {
   pickupLandmark?: string;
   pickupDate?: string;
   specialNote?: string;
+  verificationCode?: string;
   createdAt: string;
   customer: { name: string; phone?: string; email: string };
   store?: { name: string; address: string };
@@ -40,6 +41,7 @@ export default function RiderDashboard() {
   const [orders, setOrders] = useState<OrderTask[]>([]);
   const [fetching, setFetching] = useState<boolean>(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
+  const [verificationCodeInputs, setVerificationCodeInputs] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
@@ -64,7 +66,12 @@ export default function RiderDashboard() {
     }
   };
 
-  const updateStatus = async (id: number, status: string) => {
+  const updateStatus = async (id: number, status: string, code?: string) => {
+    if ((status === "DELIVERED" || status === "PICKED_UP") && (!code || code.length !== 4)) {
+      alert("Please enter the 4-digit verification code provided by the customer.");
+      return;
+    }
+    
     setUpdatingId(id);
     try {
       const res = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
@@ -73,9 +80,21 @@ export default function RiderDashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, verificationCode: code }),
       });
-      if (res.ok) fetchOrders();
+      if (res.ok) {
+        if (status === "DELIVERED") {
+          setVerificationCodeInputs(prev => {
+            const next = { ...prev };
+            delete next[id];
+            return next;
+          });
+        }
+        fetchOrders();
+      } else {
+        const errorData = await res.json();
+        alert(errorData.error || "Failed to update status");
+      }
     } finally {
       setUpdatingId(null);
     }
@@ -228,33 +247,50 @@ export default function RiderDashboard() {
                       </a>
 
                       {(o.status === "PENDING" || o.status === "PENDING_PICKUP") && (
-                        <button
-                          onClick={() => updateStatus(o.id, "PICKED_UP")}
-                          disabled={updatingId === o.id}
-                          className="bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
-                        >
-                          Pick Up
-                        </button>
+                        <div className="flex flex-1 items-center gap-2">
+                          <input
+                            type="text"
+                            maxLength={4}
+                            placeholder="Code"
+                            value={verificationCodeInputs[o.id] || ""}
+                            onChange={(e) => setVerificationCodeInputs({ ...verificationCodeInputs, [o.id]: e.target.value.replace(/\D/g, '') })}
+                            className="w-16 text-center border border-gray-300 rounded-xl py-2 text-sm font-mono font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          />
+                          <button
+                            onClick={() => updateStatus(o.id, "PICKED_UP", verificationCodeInputs[o.id])}
+                            disabled={updatingId === o.id || (verificationCodeInputs[o.id]?.length !== 4)}
+                            className="flex-1 bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+                          >
+                            Confirm Pickup
+                          </button>
+                        </div>
                       )}
 
                       {o.status === "PICKED_UP" && (
-                        <button
-                          onClick={() => updateStatus(o.id, "IN_LAUNDRY")}
-                          disabled={updatingId === o.id}
-                          className="bg-purple-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-purple-700 transition-all disabled:opacity-50"
-                        >
-                          At Store
-                        </button>
+                        <div className="flex-1 bg-purple-50 border border-purple-200 rounded-xl px-4 py-2 flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-purple-800 uppercase">Hub Drop-off Code</span>
+                          <span className="font-mono text-lg font-black text-purple-700 tracking-widest">{o.verificationCode || "----"}</span>
+                        </div>
                       )}
 
                       {o.status === "READY_FOR_DELIVERY" && (
-                        <button
-                          onClick={() => updateStatus(o.id, "DELIVERED")}
-                          disabled={updatingId === o.id}
-                          className="bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
-                        >
-                          Delivered
-                        </button>
+                        <div className="flex flex-1 items-center gap-2">
+                          <input
+                            type="text"
+                            maxLength={4}
+                            placeholder="Code"
+                            value={verificationCodeInputs[o.id] || ""}
+                            onChange={(e) => setVerificationCodeInputs({ ...verificationCodeInputs, [o.id]: e.target.value.replace(/\D/g, '') })}
+                            className="w-16 text-center border border-gray-300 rounded-xl py-2 text-sm font-mono font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                          />
+                          <button
+                            onClick={() => updateStatus(o.id, "DELIVERED", verificationCodeInputs[o.id])}
+                            disabled={updatingId === o.id || (verificationCodeInputs[o.id]?.length !== 4)}
+                            className="flex-1 bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+                          >
+                            Mark Delivered
+                          </button>
+                        </div>
                       )}
                     </div>
                   </div>

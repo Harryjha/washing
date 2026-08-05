@@ -47,6 +47,8 @@ async function createOrder(req, res) {
       assignedStoreId = stores[0].id;
     }
 
+    const code = Math.floor(1000 + Math.random() * 9000).toString();
+
     const order = await prisma.order.create({
       data: {
         customerId,
@@ -60,6 +62,7 @@ async function createOrder(req, res) {
         specialNote: specialNote || null,
         storeId: assignedStoreId,
         status: 'PENDING_PICKUP',
+        verificationCode: code,
       },
       include: {
         store: true,
@@ -104,6 +107,7 @@ async function getRiderTasks(req, res) {
       },
     });
 
+    // Add verificationCode to the response for the rider
     res.json(orders);
   } catch (error) {
     console.error('Error fetching rider tasks:', error);
@@ -117,15 +121,31 @@ async function getRiderTasks(req, res) {
 async function updateOrderStatus(req, res) {
   try {
     const { id } = req.params;
-    const { status, riderId } = req.body;
+    const { status, riderId, verificationCode } = req.body;
 
     const dataToUpdate = {};
     if (status) dataToUpdate.status = status;
     if (riderId !== undefined) dataToUpdate.riderId = riderId ? Number(riderId) : req.user.id;
 
     // Automatically set riderId when rider accepts task
-    if (req.user.role === 'RIDER' && !dataToUpdate.riderId) {
+    if (req.user.role === 'RIDER' && !dataToUpdate.riderId && status !== 'DELIVERED') {
       dataToUpdate.riderId = req.user.id;
+    }
+
+    if (status === 'PICKED_UP' || status === 'DELIVERED') {
+      const order = await prisma.order.findUnique({ where: { id: Number(id) } });
+      // Only RIDER needs to verify code. Store Admins use the specific /receive endpoint,
+      // but if they hit this, we should be careful. Assuming only Rider hits this with code.
+      if (req.user.role === 'RIDER' && order.verificationCode && order.verificationCode !== verificationCode) {
+        return res.status(400).json({ error: 'Invalid verification code' });
+      }
+
+      if (status === 'PICKED_UP') {
+        dataToUpdate.pickedUpAt = new Date();
+      } else if (status === 'DELIVERED') {
+        dataToUpdate.deliveredAt = new Date();
+        dataToUpdate.deliveryRiderId = req.user.id;
+      }
     }
 
     const updated = await prisma.order.update({

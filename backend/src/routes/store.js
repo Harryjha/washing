@@ -49,6 +49,7 @@ router.get('/orders', authenticate, authorize(['STORE_ADMIN', 'ADMIN']), async (
         customer: { select: { id: true, name: true, email: true, phone: true, address: true } },
         store: true,
         rider: { select: { id: true, name: true, email: true, phone: true } },
+        deliveryRider: { select: { id: true, name: true, email: true, phone: true } },
       },
     });
 
@@ -97,6 +98,45 @@ router.get('/riders', authenticate, authorize(['STORE_ADMIN', 'ADMIN']), async (
 router.patch('/orders/:id/receive', authenticate, authorize(['STORE_ADMIN', 'ADMIN']), async (req, res) => {
   try {
     const { id } = req.params;
+    const { verificationCode } = req.body;
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+
+    const order = await prisma.order.findUnique({ where: { id: Number(id) } });
+    if (!order) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    // Verify order belongs to store admin's store (or ADMIN role)
+    if (user.role === 'STORE_ADMIN' && order.storeId !== user.storeId) {
+      return res.status(403).json({ error: 'Unauthorized to update order for another store' });
+    }
+
+    // Check verification code
+    if (order.verificationCode && order.verificationCode !== verificationCode) {
+      return res.status(400).json({ error: 'Invalid verification code' });
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id: Number(id) },
+      data: { status: 'RECEIVED_AT_STORE', receivedAtStoreAt: new Date() },
+      include: {
+        customer: { select: { id: true, name: true, email: true, phone: true, address: true } },
+        store: true,
+        rider: { select: { id: true, name: true, email: true, phone: true } },
+      },
+    });
+
+    res.json(updatedOrder);
+  } catch (error) {
+    console.error('Error updating order receipt status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// ─── Store Admin: Mark Order as Ready For Delivery ───────────────────────────
+router.patch('/orders/:id/ready', authenticate, authorize(['STORE_ADMIN', 'ADMIN']), async (req, res) => {
+  try {
+    const { id } = req.params;
     const user = await prisma.user.findUnique({ where: { id: req.user.id } });
 
     const order = await prisma.order.findUnique({ where: { id: Number(id) } });
@@ -111,7 +151,7 @@ router.patch('/orders/:id/receive', authenticate, authorize(['STORE_ADMIN', 'ADM
 
     const updatedOrder = await prisma.order.update({
       where: { id: Number(id) },
-      data: { status: 'RECEIVED_AT_STORE' },
+      data: { status: 'READY_FOR_DELIVERY', readyForDeliveryAt: new Date() },
       include: {
         customer: { select: { id: true, name: true, email: true, phone: true, address: true } },
         store: true,
@@ -121,7 +161,7 @@ router.patch('/orders/:id/receive', authenticate, authorize(['STORE_ADMIN', 'ADM
 
     res.json(updatedOrder);
   } catch (error) {
-    console.error('Error updating order receipt status:', error);
+    console.error('Error marking order as ready:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });

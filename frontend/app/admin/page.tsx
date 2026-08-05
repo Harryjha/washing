@@ -14,7 +14,13 @@ type Order = {
   pickupAddress?: string;
   itemsDescription: string;
   customer: { name: string; email: string; phone?: string };
-  rider?: { name: string } | null;
+  rider?: { name: string; phone?: string } | null;
+  deliveryRider?: { name: string; phone?: string } | null;
+  createdAt: string;
+  pickedUpAt?: string;
+  receivedAtStoreAt?: string;
+  readyForDeliveryAt?: string;
+  deliveredAt?: string;
 };
 
 type Customer = {
@@ -98,6 +104,7 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+  const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<Order | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
   const [serviceFilter, setServiceFilter] = useState("ALL");
@@ -824,7 +831,13 @@ export default function AdminDashboard() {
                         filtered.map((o, idx) => (
                           <tr key={o.id} className={`hover:bg-surface-container-low transition-colors group ${deletingId === o.id ? "opacity-50" : ""}`}>
                             <td className="px-6 py-5">
-                              <span className="font-mono text-primary font-semibold">#{String(o.id).padStart(4, "0")}</span>
+                              <button
+                                onClick={() => setSelectedHistoryOrder(o)}
+                                className="font-mono text-primary font-semibold hover:underline"
+                                title="View full history"
+                              >
+                                #{String(o.id).padStart(4, "0")}
+                              </button>
                             </td>
                             <td className="px-6 py-5">
                               <div className="flex items-center gap-3">
@@ -1514,41 +1527,6 @@ export default function AdminDashboard() {
                     <input
                       type="email"
                       value={editStoreAdminForm.email}
-                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, email: e.target.value })}
-                      className="w-full border rounded-xl px-4 py-2.5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-xs uppercase text-outline mb-1">Phone</label>
-                    <input
-                      type="text"
-                      value={editStoreAdminForm.phone}
-                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, phone: e.target.value })}
-                      className="w-full border rounded-xl px-4 py-2.5"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-xs uppercase text-outline mb-1">Assigned Store Hub</label>
-                    <select
-                      value={editStoreAdminForm.storeId}
-                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, storeId: e.target.value })}
-                      className="w-full border rounded-xl px-4 py-2.5 bg-white"
-                    >
-                      <option value="">-- Unassigned --</option>
-                      {stores.map((s) => (
-                        <option key={s.id} value={s.id}>
-                          {s.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block font-bold text-xs uppercase text-outline mb-1">New Password (Optional)</label>
-                    <input
-                      type="password"
-                      placeholder="Leave blank to keep current password"
-                      value={editStoreAdminForm.password}
-                      onChange={(e) => setEditStoreAdminForm({ ...editStoreAdminForm, password: e.target.value })}
                       className="w-full border rounded-xl px-4 py-2.5"
                     />
                   </div>
@@ -1803,6 +1781,106 @@ export default function AdminDashboard() {
               </div>
             </div>
           )}
+
+          {/* ══════════ ORDER HISTORY MODAL ══════════ */}
+          {selectedHistoryOrder && (
+            <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-surface-container-lowest rounded-3xl p-6 md:p-8 max-w-lg w-full shadow-2xl animate-in fade-in zoom-in duration-200">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-xl font-bold text-on-surface">Order Lifecycle Timeline</h2>
+                    <p className="text-sm text-outline font-mono">Order #{String(selectedHistoryOrder.id).padStart(4, "0")}</p>
+                  </div>
+                  <button onClick={() => setSelectedHistoryOrder(null)} className="text-outline hover:text-on-surface transition-colors p-2 rounded-full hover:bg-surface-container-low">
+                    <span className="material-symbols-outlined">close</span>
+                  </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* Timeline */}
+                  <div className="relative border-l-2 border-primary/20 ml-3 pl-6 space-y-6">
+                    {/* Created */}
+                    <div className="relative">
+                      <div className="absolute -left-[31px] w-4 h-4 rounded-full bg-primary flex items-center justify-center border-4 border-white shadow-sm" />
+                      <p className="text-xs font-bold text-outline uppercase">Order Placed</p>
+                      <p className="text-sm text-on-surface font-semibold">
+                        {new Date(selectedHistoryOrder.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                      <p className="text-xs text-outline">Customer: {selectedHistoryOrder.customer.name}</p>
+                    </div>
+
+                    {/* Picked Up */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${selectedHistoryOrder.pickedUpAt ? 'bg-primary' : 'bg-outline/30'}`} />
+                      <p className="text-xs font-bold text-outline uppercase">Picked Up by Rider</p>
+                      {selectedHistoryOrder.pickedUpAt ? (
+                        <>
+                          <p className="text-sm text-on-surface font-semibold">
+                            {new Date(selectedHistoryOrder.pickedUpAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          <p className="text-xs text-outline">Rider: {selectedHistoryOrder.rider?.name || 'Unknown'}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-outline italic">Pending...</p>
+                      )}
+                    </div>
+
+                    {/* Received at Store */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${selectedHistoryOrder.receivedAtStoreAt ? 'bg-primary' : 'bg-outline/30'}`} />
+                      <p className="text-xs font-bold text-outline uppercase">Received at Store Hub</p>
+                      {selectedHistoryOrder.receivedAtStoreAt ? (
+                        <p className="text-sm text-on-surface font-semibold">
+                          {new Date(selectedHistoryOrder.receivedAtStoreAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-outline italic">Pending...</p>
+                      )}
+                    </div>
+
+                    {/* Ready for Delivery */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${selectedHistoryOrder.readyForDeliveryAt ? 'bg-primary' : 'bg-outline/30'}`} />
+                      <p className="text-xs font-bold text-outline uppercase">Ready for Delivery</p>
+                      {selectedHistoryOrder.readyForDeliveryAt ? (
+                        <p className="text-sm text-on-surface font-semibold">
+                          {new Date(selectedHistoryOrder.readyForDeliveryAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-outline italic">Pending...</p>
+                      )}
+                    </div>
+
+                    {/* Delivered */}
+                    <div className="relative">
+                      <div className={`absolute -left-[31px] w-4 h-4 rounded-full flex items-center justify-center border-4 border-white shadow-sm ${selectedHistoryOrder.deliveredAt ? 'bg-emerald-500' : 'bg-outline/30'}`} />
+                      <p className="text-xs font-bold text-outline uppercase">Delivered & Complete</p>
+                      {selectedHistoryOrder.deliveredAt ? (
+                        <>
+                          <p className="text-sm text-on-surface font-semibold">
+                            {new Date(selectedHistoryOrder.deliveredAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                          </p>
+                          <p className="text-xs text-outline">Delivered by: {selectedHistoryOrder.deliveryRider?.name || selectedHistoryOrder.rider?.name || 'Unknown'}</p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-outline italic">Pending...</p>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      onClick={() => setSelectedHistoryOrder(null)}
+                      className="px-6 py-2 bg-surface-container-high text-on-surface-variant font-bold rounded-xl hover:bg-surface-variant transition-all"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
         </main>
       </div>
     </div>

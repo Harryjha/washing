@@ -48,6 +48,7 @@ router.get('/all', authenticate, authorize(['ADMIN']), async (req, res) => {
       include: {
         customer: { select: { name: true, email: true, phone: true } },
         rider: { select: { name: true, phone: true } },
+        deliveryRider: { select: { name: true, phone: true } },
         store: true,
       },
     });

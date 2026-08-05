@@ -14,6 +14,7 @@ type Order = {
   pickupAddress: string;
   pickupDate?: string;
   specialNote?: string;
+  verificationCode?: string;
   createdAt: string;
   rider?: { name: string; phone: string } | null;
 };
@@ -289,6 +290,17 @@ export default function CustomerDashboard() {
                         {conf.label}
                       </div>
                     </div>
+
+                    {/* Verification Code Box */}
+                    {order.verificationCode && order.status !== "CANCELLED" && order.status !== "DELIVERED" && (
+                      <div className="bg-indigo-50 border border-indigo-200 p-4 rounded-xl flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-bold text-indigo-900 uppercase tracking-wider">Delivery Code</p>
+                          <p className="text-[10px] text-indigo-700 mt-0.5">Share with rider at final drop-off</p>
+                        </div>
+                        <span className="font-mono text-2xl font-black text-indigo-600 tracking-widest">{order.verificationCode}</span>
+                      </div>
+                    )}
 
                     {/* Order Tracker Progress Bar */}
                     {order.status !== "CANCELLED" && (
