@@ -1,17 +1,33 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import { useAuth } from "../context/AuthContext";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import ProfileDropdown from "../components/ProfileDropdown";
+import AuthModal from "../components/AuthModal";
 
-export default function HomePage() {
+function HomeContent() {
   const [activeNav, setActiveNav] = useState("services");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { user, logout, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const [authModal, setAuthModal] = useState<"login" | "register" | null>(null);
+
+  useEffect(() => {
+    if (!loading && user?.role === "RIDER") router.replace("/rider");
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    const auth = searchParams.get("auth");
+    if (auth === "login" || auth === "register") {
+      setAuthModal(auth);
+      window.history.replaceState({}, "", "/");
+    }
+  }, [searchParams]);
 
   // Tomorrow's date in YYYY-MM-DD
   const tomorrow = new Date();
@@ -108,43 +124,75 @@ export default function HomePage() {
               </>
             ) : (
               <>
-                <Link
-                  href="/login"
+                <button
+                  onClick={() => {
+                    setAuthModal("login");
+                    setMobileMenuOpen(false);
+                  }}
                   className="hidden md:block font-label-md text-on-surface-variant hover:text-primary px-4 py-2 transition-all"
                 >
                   Log In
-                </Link>
-                <Link
-                  href="/register"
-                  className="hidden md:block bg-primary-container text-on-primary-container font-label-md px-6 py-3 rounded-xl shadow-sm hover:opacity-90 active:scale-95 transition-all"
+                </button>
+                <button
+                  onClick={() => {
+                    setAuthModal("register");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="hidden md:block bg-primary text-white font-label-md px-6 py-3 rounded-xl shadow-sm hover:bg-primary/90 active:scale-95 transition-all"
                 >
-                  Schedule Pickup
-                </Link>
+                  Get Started
+                </button>
               </>
             )}
-            <button className="md:hidden text-primary p-2 flex items-center justify-center" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
-              <span className="material-symbols-outlined text-3xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
+            <button
+              className="md:hidden text-on-surface p-2 flex items-center justify-center rounded-lg hover:bg-surface-container transition-all"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              <span className="material-symbols-outlined text-2xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
             </button>
           </div>
         </div>
 
-        {/* Mobile Menu Overlay */}
+        {/* Mobile Menu Slide-down */}
         {mobileMenuOpen && (
-          <div className="md:hidden absolute top-[100%] left-0 w-full bg-surface shadow-md py-6 flex flex-col items-center gap-6 border-t border-outline-variant/20">
-            <Link href="/services" className="font-label-lg text-primary font-bold" onClick={() => setMobileMenuOpen(false)}>Services</Link>
-            <a href="#how-it-works" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>How it Works</a>
-            <a href="#pricing" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Pricing</a>
-            <a href="#testimonials" className="font-label-lg text-on-surface-variant" onClick={() => setMobileMenuOpen(false)}>Testimonials</a>
-            <div className="w-10/12 h-px bg-outline-variant/30 my-2"></div>
+          <div className="md:hidden absolute top-[100%] left-0 w-full bg-surface/95 backdrop-blur-md shadow-xl py-6 flex flex-col gap-1 border-t border-outline-variant/20 z-40 px-4">
+            <Link href="/services" className="font-label-md font-semibold text-on-surface px-4 py-3 rounded-xl hover:bg-surface-container flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+              <span className="material-symbols-outlined text-primary text-xl">dry_cleaning</span>Services
+            </Link>
+            <a href="#how-it-works" className="font-label-md text-on-surface-variant px-4 py-3 rounded-xl hover:bg-surface-container flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+              <span className="material-symbols-outlined text-xl text-outline">info</span>How it Works
+            </a>
+            <a href="#pricing" className="font-label-md text-on-surface-variant px-4 py-3 rounded-xl hover:bg-surface-container flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+              <span className="material-symbols-outlined text-xl text-outline">payments</span>Pricing
+            </a>
+            <a href="#testimonials" className="font-label-md text-on-surface-variant px-4 py-3 rounded-xl hover:bg-surface-container flex items-center gap-3" onClick={() => setMobileMenuOpen(false)}>
+              <span className="material-symbols-outlined text-xl text-outline">star</span>Testimonials
+            </a>
+            <div className="h-px bg-outline-variant/30 my-3"></div>
             {user ? (
-              <>
-                <div className="px-4"><ProfileDropdown /></div>
-              </>
+              <div className="px-4"><ProfileDropdown /></div>
             ) : (
-              <>
-                <Link href="/login" className="font-label-lg text-primary" onClick={() => setMobileMenuOpen(false)}>Log In</Link>
-                <Link href="/register" className="bg-primary text-white font-label-lg px-8 py-4 rounded-xl shadow-sm w-10/12 text-center font-bold" onClick={() => setMobileMenuOpen(false)}>Schedule Pickup</Link>
-              </>
+              <div className="flex flex-col gap-3 px-2">
+                <button
+                  onClick={() => {
+                    setAuthModal("login");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="font-label-md font-semibold text-primary border border-primary/30 px-4 py-3.5 rounded-xl hover:bg-primary/5 transition-all text-center"
+                >
+                  Log In
+                </button>
+                <button
+                  onClick={() => {
+                    setAuthModal("register");
+                    setMobileMenuOpen(false);
+                  }}
+                  className="bg-primary text-white font-label-md font-bold px-4 py-3.5 rounded-xl shadow-sm text-center hover:bg-primary/90 transition-all"
+                >
+                  Get Started — Free Pickup
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -182,39 +230,73 @@ export default function HomePage() {
                 <span style={{ color: "rgb(255, 87, 34)" }}>STEAMPRESS.</span>
               </p>
 
-              {/* Dynamic Quick-book pill */}
-              <form onSubmit={handleHeroSubmit} className="bg-white rounded-2xl md:rounded-full p-3 flex flex-col md:flex-row items-center gap-2 shadow-2xl max-w-xl border border-white/20">
-                <div className="w-full md:flex-1 px-4 border-b md:border-b-0 md:border-r border-gray-200 py-1">
-                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">
-                    Pickup Date
-                  </label>
-                  <input
-                    type="date"
-                    value={heroDate}
-                    onChange={(e) => setHeroDate(e.target.value)}
-                    min={new Date().toISOString().split("T")[0]}
-                    className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none cursor-pointer"
-                  />
+              {/* Dynamic Quick-book Pill — Premium UI */}
+              <form onSubmit={handleHeroSubmit} className="relative w-full max-w-xl">
+                <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-1 shadow-2xl">
+                  <div className="bg-white rounded-xl overflow-hidden">
+                    {/* Date Row */}
+                    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="material-symbols-outlined text-primary text-[20px]">calendar_today</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.12em] mb-0.5">
+                          Pickup Date
+                        </label>
+                        <input
+                          type="date"
+                          value={heroDate}
+                          onChange={(e) => setHeroDate(e.target.value)}
+                          min={new Date().toISOString().split("T")[0]}
+                          className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    {/* Address Row */}
+                    <div className="flex items-center gap-3 px-4 py-3">
+                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                        <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.12em] mb-0.5">
+                          Pickup Address
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="Enter your street & area"
+                          value={heroAddress}
+                          onChange={(e) => setHeroAddress(e.target.value)}
+                          className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-normal"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Submit button inside pill */}
+                  <button
+                    type="submit"
+                    className="mt-1 w-full bg-primary hover:bg-primary/90 active:scale-[0.98] text-white font-bold text-sm rounded-xl h-12 flex items-center justify-center gap-2 transition-all shadow-lg"
+                  >
+                    <span>Book My Pickup</span>
+                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
+                  </button>
                 </div>
-                <div className="w-full md:flex-1 px-4 py-1">
-                  <label className="block text-[10px] font-extrabold text-gray-500 uppercase tracking-wider">
-                    Pickup Address
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Enter street & area..."
-                    value={heroAddress}
-                    onChange={(e) => setHeroAddress(e.target.value)}
-                    className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none placeholder:text-gray-400"
-                  />
+
+                {/* Trust badges below form */}
+                <div className="flex items-center gap-4 mt-4 px-1">
+                  <span className="flex items-center gap-1.5 text-white/80 text-[11px] font-semibold">
+                    <span className="material-symbols-outlined text-emerald-400 text-base">verified</span>
+                    Free Pickup
+                  </span>
+                  <span className="flex items-center gap-1.5 text-white/80 text-[11px] font-semibold">
+                    <span className="material-symbols-outlined text-amber-400 text-base">bolt</span>
+                    24h Turnaround
+                  </span>
+                  <span className="flex items-center gap-1.5 text-white/80 text-[11px] font-semibold">
+                    <span className="material-symbols-outlined text-sky-400 text-base">lock</span>
+                    Secure & Tracked
+                  </span>
                 </div>
-                <button
-                  type="submit"
-                  className="bg-primary text-white w-full md:w-12 h-12 rounded-xl md:rounded-full flex items-center justify-center hover:bg-primary/90 transition-all shadow-md flex-shrink-0"
-                  title="Book Service Now"
-                >
-                  <span className="material-symbols-outlined text-2xl">arrow_forward</span>
-                </button>
               </form>
             </div>
           </div>
@@ -799,6 +881,21 @@ export default function HomePage() {
           </div>
         </div>
       </footer>
+
+      {authModal && (
+        <AuthModal
+          mode={authModal}
+          onClose={() => setAuthModal(null)}
+        />
+      )}
     </div>
+  );
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-primary font-bold">Loading...</div>}>
+      <HomeContent />
+    </Suspense>
   );
 }

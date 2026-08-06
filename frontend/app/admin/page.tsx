@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import ProfileDropdown from "../../components/ProfileDropdown";
+import RouteGuard from "../../components/RouteGuard";
 
 type Order = {
   id: number;
@@ -103,11 +104,12 @@ const AVATAR_COLORS = [
   "bg-surface-variant text-on-surface-variant",
 ];
 
-export default function AdminDashboard() {
+function AdminDashboard() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
 
   const [activeView, setActiveView] = useState<ActiveView>("dashboard");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<Order | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [statusFilter, setStatusFilter] = useState("ALL");
@@ -160,13 +162,11 @@ export default function AdminDashboard() {
   const [deleteStoreAdminConfirmId, setDeleteStoreAdminConfirmId] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/");
-    if (!loading && user && user.role !== "ADMIN") router.push("/");
     if (user && user.role === "ADMIN") {
       fetchOrders();
       fetchStores();
     }
-  }, [user, loading]);
+  }, [user]);
 
   useEffect(() => {
     if (activeView === "customers" && user?.role === "ADMIN") fetchCustomers();
@@ -585,12 +585,50 @@ export default function AdminDashboard() {
         </div>
       </aside>
 
+      {/* ─── Mobile Sidebar Overlay ─── */}
+      {mobileMenuOpen && (
+        <div className="md:hidden fixed inset-0 z-50 flex">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileMenuOpen(false)} />
+          <aside className="relative w-64 h-full bg-surface-container-low flex flex-col shadow-2xl">
+            <div className="p-6 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-primary flex items-center justify-center rounded-lg">
+                  <span className="material-symbols-outlined text-white text-sm">local_laundry_service</span>
+                </div>
+                <span className="font-bold text-lg tracking-tight text-primary uppercase">Admin</span>
+              </div>
+              <button onClick={() => setMobileMenuOpen(false)}>
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
+            </div>
+            <nav className="flex-1 px-3 mt-2 space-y-1 overflow-y-auto">
+              <NavItem view="dashboard"    icon="dashboard"      label="Dashboard"  />
+              <NavItem view="orders"       icon="list_alt"       label="Orders"     />
+              <NavItem view="customers"    icon="group"          label="Customers"  />
+              <NavItem view="services"     icon="dry_cleaning"   label="Services"   />
+              <NavItem view="riders"       icon="two_wheeler"    label="Riders"     />
+              <NavItem view="store-admins" icon="badge"          label="Store Admins" />
+              <NavItem view="stores"       icon="store"          label="Manage Store Hubs" />
+            </nav>
+          </aside>
+        </div>
+      )}
+
       {/* ─── Right column ─── */}
-      <div className="md:pl-72">
+      <div className="md:pl-72 flex flex-col min-h-screen">
         {/* ─── Top Header ─── */}
-        <header className="fixed top-0 left-0 md:left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-6">
+        <header className="sticky top-0 left-0 right-0 h-16 md:h-20 bg-surface/80 backdrop-blur-xl shadow-[0_1px_8px_rgba(0,0,0,0.04)] z-40 flex items-center justify-between px-4 md:px-6">
+          <div className="flex items-center gap-3 md:hidden">
+            <button onClick={() => setMobileMenuOpen(true)} className="p-2 text-on-surface-variant">
+              <span className="material-symbols-outlined">menu</span>
+            </button>
+            <div className="w-8 h-8 bg-primary flex items-center justify-center rounded-lg">
+              <span className="material-symbols-outlined text-white text-sm">local_laundry_service</span>
+            </div>
+          </div>
+          
           {/* Search */}
-          <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-outline-variant/30 w-full md:w-96">
+          <div className="hidden md:flex items-center gap-3 bg-white px-4 py-2 rounded-full border border-outline-variant/30 w-96">
             <span className="material-symbols-outlined text-outline">search</span>
             <input
               className="bg-transparent border-none outline-none text-sm w-full placeholder:text-outline"
@@ -600,21 +638,17 @@ export default function AdminDashboard() {
             />
           </div>
 
-          {/* Right actions */}
-          <div className="flex items-center gap-6">
-            <button className="relative text-on-surface-variant hover:text-primary transition-colors">
-              <span className="material-symbols-outlined">notifications</span>
-              <span className="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full" />
+          <div className="flex items-center gap-4 ml-auto md:ml-0">
+            <button className="hidden md:flex w-10 h-10 rounded-full bg-white border border-outline-variant/30 items-center justify-center text-on-surface-variant hover:bg-surface-container-high transition-all relative">
+              <span className="material-symbols-outlined text-xl">notifications</span>
+              <span className="absolute top-2 right-2 w-2 h-2 bg-error rounded-full animate-pulse border border-white" />
             </button>
-
-            <div className="hidden md:block pl-6 border-l border-outline-variant/30">
-              <ProfileDropdown />
-            </div>
+            <ProfileDropdown />
           </div>
         </header>
 
-        {/* ─── Main ─── */}
-        <main className="pt-20 min-h-screen px-6 py-6">
+        {/* ─── Main Content ─── */}
+        <main className="flex-1 p-4 md:p-8 bg-surface-container-lowest overflow-x-hidden min-h-[calc(100vh-5rem)]">
           {/* ══════════ DASHBOARD VIEW ══════════ */}
           {activeView === "dashboard" && (
             <div className="flex flex-col gap-10">
@@ -2226,5 +2260,13 @@ export default function AdminDashboard() {
         </main>
       </div>
     </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <RouteGuard allowedRoles={["ADMIN"]}>
+      <AdminDashboard />
+    </RouteGuard>
   );
 }

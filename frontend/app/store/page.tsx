@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
+import RouteGuard from "../../components/RouteGuard";
 
 type OrderItem = {
   id: number;
@@ -40,7 +41,7 @@ const STATUS_BADGES: Record<string, { label: string; style: string }> = {
   CANCELLED:          { label: "Cancelled", style: "bg-red-100 text-red-800 border-red-200" },
 };
 
-export default function StoreAdminDashboard() {
+function StoreAdminDashboard() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
 
@@ -56,14 +57,10 @@ export default function StoreAdminDashboard() {
   const [selectedHistoryOrder, setSelectedHistoryOrder] = useState<OrderItem | null>(null);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/");
-    if (!loading && user && user.role !== "STORE_ADMIN" && user.role !== "ADMIN") {
-      router.push("/");
-    }
     if (user && (user.role === "STORE_ADMIN" || user.role === "ADMIN")) {
       loadData();
     }
-  }, [user, loading]);
+  }, [user]);
 
   const loadData = async () => {
     setFetching(true);
@@ -190,33 +187,33 @@ export default function StoreAdminDashboard() {
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Top Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 bg-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-md shadow-indigo-200">
-              <span className="material-symbols-outlined text-2xl">store</span>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 md:h-20 flex items-center justify-between">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="w-9 h-9 md:w-11 md:h-11 bg-indigo-600 rounded-xl md:rounded-2xl flex items-center justify-center text-white shadow-md shadow-indigo-200">
+              <span className="material-symbols-outlined text-xl md:text-2xl">store</span>
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-lg font-bold text-slate-900">{storeInfo?.name || "Store Hub Portal"}</h1>
-                <span className="bg-indigo-50 text-indigo-700 text-xs font-extrabold px-2.5 py-0.5 rounded-full border border-indigo-100 uppercase tracking-wider">
+              <div className="flex items-center gap-1 md:gap-2">
+                <h1 className="text-sm md:text-lg font-bold text-slate-900 line-clamp-1">{storeInfo?.name || "Store Hub Portal"}</h1>
+                <span className="bg-indigo-50 text-indigo-700 text-[9px] md:text-xs font-extrabold px-2 py-0.5 rounded-full border border-indigo-100 uppercase tracking-wider hidden sm:inline-block">
                   Store Admin
                 </span>
               </div>
-              <p className="text-xs text-slate-500 truncate max-w-md">{storeInfo?.address || "Branch Store Operations"}</p>
+              <p className="text-[10px] md:text-xs text-slate-500 truncate max-w-[120px] md:max-w-md hidden sm:block">{storeInfo?.address || "Branch Store Operations"}</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <div className="text-right hidden sm:block">
               <p className="text-xs font-bold text-slate-800">{user?.name}</p>
               <p className="text-[11px] text-slate-500">{user?.email}</p>
             </div>
             <button
               onClick={logout}
-              className="flex items-center gap-2 px-3.5 py-2 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 rounded-xl text-xs font-bold transition-colors"
+              className="flex items-center gap-1 md:gap-2 px-2 md:px-3.5 py-1.5 md:py-2 bg-slate-100 hover:bg-red-50 text-slate-700 hover:text-red-600 rounded-xl text-xs font-bold transition-colors"
             >
-              <span className="material-symbols-outlined text-base">logout</span>
-              Logout
+              <span className="material-symbols-outlined text-sm md:text-base">logout</span>
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
@@ -631,5 +628,13 @@ export default function StoreAdminDashboard() {
 
       </main>
     </div>
+  );
+}
+
+export default function StoreAdminDashboardPage() {
+  return (
+    <RouteGuard allowedRoles={["STORE_ADMIN", "ADMIN"]}>
+      <StoreAdminDashboard />
+    </RouteGuard>
   );
 }

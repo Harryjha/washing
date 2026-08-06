@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProfileDropdown from "../../components/ProfileDropdown";
+import RouteGuard from "../../components/RouteGuard";
 
 type OrderTask = {
   id: number;
@@ -35,7 +36,7 @@ const STATUS_BADGES: Record<string, { label: string; style: string }> = {
   DELIVERED:          { label: "Delivered",       style: "bg-emerald-100 text-emerald-800 font-bold" },
 };
 
-export default function RiderDashboard() {
+function RiderDashboard() {
   const { user, logout, loading } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<OrderTask[]>([]);
@@ -44,12 +45,10 @@ export default function RiderDashboard() {
   const [verificationCodeInputs, setVerificationCodeInputs] = useState<Record<number, string>>({});
 
   useEffect(() => {
-    if (!loading && !user) router.push("/");
-    if (user && user.role !== "RIDER" && user.role !== "ADMIN") router.push("/");
     if (user && (user.role === "RIDER" || user.role === "ADMIN")) {
       fetchOrders();
     }
-  }, [user, loading]);
+  }, [user]);
 
   const fetchOrders = async () => {
     setFetching(true);
@@ -117,15 +116,15 @@ export default function RiderDashboard() {
     <div className="min-h-screen bg-[#f8fafb] text-gray-900 font-sans">
       {/* ─── Top Header ─── */}
       <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200 shadow-sm">
-        <div className="max-w-[1200px] mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-3">
-            <img src="/logo.png" alt="Washington Laundrettes" className="h-[52px] w-auto object-contain" />
-            <span className="bg-primary/10 text-primary text-[10px] font-black uppercase px-2.5 py-1 rounded-md tracking-wider hidden sm:inline-block">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-6 py-3 md:py-4 flex justify-between items-center h-[72px]">
+          <Link href="/" className="flex items-center gap-2 md:gap-3">
+            <img src="/logo.png" alt="Washington Laundrettes" className="h-[48px] md:h-[52px] w-auto object-contain" />
+            <span className="bg-primary/10 text-primary text-[9px] md:text-[10px] font-black uppercase px-2 py-1 rounded-md tracking-wider hidden sm:inline-block">
               Rider Portal
             </span>
           </Link>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-full text-xs font-semibold text-gray-700">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               {user.name}
@@ -136,9 +135,9 @@ export default function RiderDashboard() {
       </header>
 
       {/* ─── Main Content ─── */}
-      <main className="max-w-[1200px] mx-auto px-6 py-8 space-y-8">
+      <main className="max-w-[1200px] mx-auto px-4 md:px-6 py-6 md:py-8 space-y-6 md:space-y-8">
         {/* Banner */}
-        <div className="bg-gradient-to-r from-[#004d64] via-[#006684] to-[#016684] text-white rounded-3xl p-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="bg-gradient-to-r from-[#004d64] via-[#006684] to-[#016684] text-white rounded-3xl p-6 md:p-8 shadow-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
             <div className="inline-flex items-center gap-2 bg-white/15 px-3 py-1 rounded-full text-xs font-semibold text-sky-200 uppercase tracking-wider">
               <span className="material-symbols-outlined text-sm">near_me</span>
@@ -150,7 +149,7 @@ export default function RiderDashboard() {
             </p>
           </div>
 
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-4 rounded-2xl text-center min-w-[140px]">
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-4 rounded-2xl text-center w-full md:w-auto min-w-[140px]">
             <span className="text-[11px] font-bold text-sky-200 uppercase tracking-wider block">Active Tasks</span>
             <span className="text-3xl font-black">{activePickups.length}</span>
           </div>
@@ -301,5 +300,13 @@ export default function RiderDashboard() {
         </section>
       </main>
     </div>
+  );
+}
+
+export default function RiderDashboardPage() {
+  return (
+    <RouteGuard allowedRoles={["RIDER", "ADMIN"]}>
+      <RiderDashboard />
+    </RouteGuard>
   );
 }

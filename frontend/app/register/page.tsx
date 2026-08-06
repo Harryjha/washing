@@ -1,71 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { useAuth } from "../../context/AuthContext";
 
-export default function Register() {
-  const [formData, setFormData] = useState({
-    name: "", email: "", password: "", phone: "", address: ""
-  });
-  const [error, setError] = useState("");
+export default function RegisterPage() {
   const router = useRouter();
-  const { login } = useAuth();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const res = await fetch("http://localhost:5001/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(formData),
-    });
-
-    if (res.ok) {
-      // Auto-login after registration (which also submits any pending order)
-      await login(formData.email, formData.password);
-    } else {
-      const data = await res.json();
-      setError(data.error || "Registration failed");
-    }
-  };
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  }
+  useEffect(() => {
+    router.replace("/?auth=register");
+  }, [router]);
 
   return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: '2rem' }}>
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '500px' }}>
-        <h2 style={{ textAlign: 'center', marginBottom: '2rem', color: 'var(--primary)' }}>Create an Account</h2>
-        {error && <div style={{ color: 'var(--danger)', marginBottom: '1rem', textAlign: 'center' }}>{error}</div>}
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="label">Full Name</label>
-            <input type="text" name="name" required className="input-field" onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label className="label">Email</label>
-            <input type="email" name="email" required className="input-field" onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label className="label">Password</label>
-            <input type="password" name="password" required className="input-field" onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label className="label">Phone</label>
-            <input type="text" name="phone" required className="input-field" onChange={handleChange} />
-          </div>
-          <div className="form-group">
-            <label className="label">Address</label>
-            <input type="text" name="address" required className="input-field" onChange={handleChange} />
-          </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '1rem' }}>Register</button>
-        </form>
-        <p style={{ textAlign: 'center', marginTop: '1.5rem', color: 'var(--text-muted)' }}>
-          Already have an account? <Link href="/login" style={{ color: 'var(--primary)', fontWeight: '600' }}>Login</Link>
-        </p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>
   );
 }

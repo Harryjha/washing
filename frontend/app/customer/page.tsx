@@ -5,6 +5,7 @@ import { useAuth } from "../../context/AuthContext";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import ProfileDropdown from "../../components/ProfileDropdown";
+import RouteGuard from "../../components/RouteGuard";
 
 type Order = {
   id: number;
@@ -87,8 +88,8 @@ const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; i
   CANCELLED:          { label: "Cancelled",        bg: "bg-rose-100",   text: "text-rose-800",   icon: "cancel" },
 };
 
-export default function CustomerDashboard() {
-  const { user, logout, loading } = useAuth();
+function CustomerDashboard() {
+  const { user, loading, logout } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
   const [fetching, setFetching] = useState(true);
@@ -97,11 +98,11 @@ export default function CustomerDashboard() {
   const [newOrder, setNewOrder] = useState({ itemsDescription: "", pickupAddress: "", pickupDate: "", specialNote: "" });
   const [submitting, setSubmitting] = useState(false);
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   useEffect(() => {
-    if (!loading && !user) router.push("/");
-    if (user && user.role !== "CUSTOMER") router.push("/");
     if (user && user.role === "CUSTOMER") fetchOrders();
-  }, [user, loading]);
+  }, [user]);
 
   const fetchOrders = async () => {
     setFetching(true);
@@ -164,26 +165,49 @@ export default function CustomerDashboard() {
     <div className="bg-[#f8fafb] text-[#191c1d] min-h-screen font-sans">
       {/* ─── Top Navbar ─── */}
       <header className="sticky top-0 w-full z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200/80 shadow-sm">
-        <div className="flex justify-between items-center px-6 py-3 max-w-[1200px] mx-auto">
+        <div className="flex justify-between items-center px-4 md:px-6 py-3 max-w-[1200px] mx-auto h-[72px]">
           <Link href="/" className="flex items-center">
-            <img src="/logo.png" alt="Washington Laundrettes" className="h-[56px] md:h-[68px] w-auto max-w-[280px] object-contain object-left" />
+            <img src="/logo.png" alt="Washington Laundrettes" className="h-[48px] md:h-[56px] w-auto object-contain object-left" />
           </Link>
           <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
             <Link href="/services" className="text-gray-600 hover:text-primary transition-colors">Services</Link>
             <Link href="/#how-it-works" className="text-gray-600 hover:text-primary transition-colors">How it Works</Link>
-            <Link href="/#main-pricing" className="text-gray-600 hover:text-primary transition-colors">Pricing</Link>
+            <Link href="/#pricing" className="text-gray-600 hover:text-primary transition-colors">Pricing</Link>
             <Link href="/customer" className="text-primary font-bold border-b-2 border-primary pb-1">My Dashboard</Link>
           </nav>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 md:gap-4">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-primary text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-md hover:bg-primary/90 transition-all active:scale-95"
+              className="bg-primary text-white text-xs font-bold px-3 md:px-5 py-2.5 rounded-xl shadow-md hover:bg-primary/90 transition-all active:scale-95 whitespace-nowrap"
             >
-              + Quick Pickup
+              <span className="hidden md:inline">+ Quick Pickup</span>
+              <span className="md:hidden">+ Book</span>
             </button>
-            <ProfileDropdown />
+            <div className="hidden md:block">
+              <ProfileDropdown />
+            </div>
+            <button
+              className="md:hidden p-2 text-gray-700 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            >
+              <span className="material-symbols-outlined text-2xl">{mobileMenuOpen ? 'close' : 'menu'}</span>
+            </button>
           </div>
         </div>
+
+        {/* Mobile Nav Slide-down */}
+        {mobileMenuOpen && (
+          <div className="md:hidden absolute top-full left-0 w-full bg-white border-b border-gray-200 shadow-lg py-4 px-4 flex flex-col gap-2 z-40">
+            <div className="flex justify-between items-center px-4 py-2 bg-gray-50 rounded-xl mb-2">
+              <span className="text-sm font-bold text-gray-800">{user?.name}</span>
+              <button onClick={logout} className="text-xs font-bold text-red-600">Logout</button>
+            </div>
+            <Link href="/services" className="px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl" onClick={() => setMobileMenuOpen(false)}>Services</Link>
+            <Link href="/#how-it-works" className="px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl" onClick={() => setMobileMenuOpen(false)}>How it Works</Link>
+            <Link href="/#pricing" className="px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 rounded-xl" onClick={() => setMobileMenuOpen(false)}>Pricing</Link>
+            <Link href="/customer" className="px-4 py-3 text-sm font-bold text-primary bg-primary/5 rounded-xl" onClick={() => setMobileMenuOpen(false)}>My Dashboard</Link>
+          </div>
+        )}
       </header>
 
       {/* ─── Main Content ─── */}
@@ -206,18 +230,18 @@ export default function CustomerDashboard() {
             </div>
 
             {/* Quick Stats Bento */}
-            <div className="flex gap-4 w-full md:w-auto">
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3.5 rounded-2xl flex-1 md:flex-none min-w-[110px] text-center">
-                <p className="text-[11px] font-semibold text-sky-200 uppercase tracking-wider">Active</p>
-                <p className="text-3xl font-black mt-0.5">{activeOrders.length}</p>
+            <div className="grid grid-cols-3 gap-2 md:gap-4 w-full md:w-auto">
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-3 md:px-5 md:py-3.5 rounded-2xl text-center">
+                <p className="text-[10px] md:text-[11px] font-semibold text-sky-200 uppercase tracking-wider">Active</p>
+                <p className="text-2xl md:text-3xl font-black mt-0.5">{activeOrders.length}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3.5 rounded-2xl flex-1 md:flex-none min-w-[110px] text-center">
-                <p className="text-[11px] font-semibold text-sky-200 uppercase tracking-wider">Completed</p>
-                <p className="text-3xl font-black mt-0.5">{completedOrders.length}</p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-3 md:px-5 md:py-3.5 rounded-2xl text-center">
+                <p className="text-[10px] md:text-[11px] font-semibold text-sky-200 uppercase tracking-wider">Completed</p>
+                <p className="text-2xl md:text-3xl font-black mt-0.5">{completedOrders.length}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-md border border-white/20 px-5 py-3.5 rounded-2xl flex-1 md:flex-none min-w-[110px] text-center">
-                <p className="text-[11px] font-semibold text-sky-200 uppercase tracking-wider">Total</p>
-                <p className="text-3xl font-black mt-0.5">{orders.length}</p>
+              <div className="bg-white/10 backdrop-blur-md border border-white/20 px-3 py-3 md:px-5 md:py-3.5 rounded-2xl text-center">
+                <p className="text-[10px] md:text-[11px] font-semibold text-sky-200 uppercase tracking-wider">Total</p>
+                <p className="text-2xl md:text-3xl font-black mt-0.5">{orders.length}</p>
               </div>
             </div>
           </div>
@@ -530,5 +554,13 @@ export default function CustomerDashboard() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function CustomerDashboardPage() {
+  return (
+    <RouteGuard allowedRoles={["CUSTOMER"]}>
+      <CustomerDashboard />
+    </RouteGuard>
   );
 }
