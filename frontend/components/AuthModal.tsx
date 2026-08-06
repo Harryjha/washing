@@ -44,7 +44,7 @@ export default function AuthModal({ mode, onClose }: AuthModalProps) {
     setRegLoading(true);
     setRegError("");
     try {
-      const res = await fetch("http://localhost:5001/api/auth/register", {
+      const res = await fetch("https://washing-3ntw.onrender.com/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(regForm),

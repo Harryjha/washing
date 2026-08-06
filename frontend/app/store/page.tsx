@@ -68,7 +68,7 @@ function StoreAdminDashboard() {
       const token = localStorage.getItem("token");
 
       // Fetch store info
-      const infoRes = await fetch("http://localhost:5001/api/store/info", {
+      const infoRes = await fetch("https://washing-3ntw.onrender.com/api/store/info", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (infoRes.ok) {
@@ -77,7 +77,7 @@ function StoreAdminDashboard() {
       }
 
       // Fetch store orders
-      const ordersRes = await fetch("http://localhost:5001/api/store/orders", {
+      const ordersRes = await fetch("https://washing-3ntw.onrender.com/api/store/orders", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (ordersRes.ok) {
@@ -86,7 +86,7 @@ function StoreAdminDashboard() {
       }
 
       // Fetch store riders
-      const ridersRes = await fetch("http://localhost:5001/api/store/riders", {
+      const ridersRes = await fetch("https://washing-3ntw.onrender.com/api/store/riders", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (ridersRes.ok) {
@@ -110,7 +110,7 @@ function StoreAdminDashboard() {
     setUpdatingOrderId(orderId);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5001/api/store/orders/${orderId}/receive`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/store/orders/${orderId}/receive`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -141,7 +141,7 @@ function StoreAdminDashboard() {
     setUpdatingOrderId(orderId);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5001/api/store/orders/${orderId}/ready`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/store/orders/${orderId}/ready`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

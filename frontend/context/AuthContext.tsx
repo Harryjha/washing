@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const token = localStorage.getItem("token");
     if (token) {
       // Very basic verify logic for demo
-      fetch("http://localhost:5001/api/auth/verify", {
+      fetch("https://washing-3ntw.onrender.com/api/auth/verify", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -37,7 +37,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    const res = await fetch("http://localhost:5001/api/auth/login", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (pendingRaw && data.user.role === "CUSTOMER") {
         try {
           const payload = JSON.parse(pendingRaw);
-          const orderRes = await fetch("http://localhost:5001/api/orders", {
+          const orderRes = await fetch("https://washing-3ntw.onrender.com/api/orders", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

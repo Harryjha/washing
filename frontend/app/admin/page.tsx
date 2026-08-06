@@ -175,7 +175,7 @@ function AdminDashboard() {
   }, [activeView]);
 
   const fetchOrders = async () => {
-    const res = await fetch("http://localhost:5001/api/orders/all", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/orders/all", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     if (res.ok) {
@@ -185,7 +185,7 @@ function AdminDashboard() {
   };
 
   const fetchCustomers = async () => {
-    const res = await fetch("http://localhost:5001/api/customers", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/customers", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     if (res.ok) {
@@ -196,7 +196,7 @@ function AdminDashboard() {
 
   const fetchStores = async () => {
     try {
-      const res = await fetch("http://localhost:5001/api/stores");
+      const res = await fetch("https://washing-3ntw.onrender.com/api/stores");
       if (res.ok) {
         const data = await res.json();
         setStores(data);
@@ -207,7 +207,7 @@ function AdminDashboard() {
   };
 
   const fetchRiders = async () => {
-    const res = await fetch("http://localhost:5001/api/riders", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/riders", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     if (res.ok) {
@@ -219,7 +219,7 @@ function AdminDashboard() {
   const createRider = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddRiderError("");
-    const res = await fetch("http://localhost:5001/api/riders", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/riders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -261,7 +261,7 @@ function AdminDashboard() {
 
   const saveRider = async () => {
     if (!editingRider) return;
-    const res = await fetch(`http://localhost:5001/api/riders/${editingRider.id}`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/riders/${editingRider.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -277,7 +277,7 @@ function AdminDashboard() {
 
   const deleteRider = async (id: number) => {
     setDeletingRiderId(id);
-    const res = await fetch(`http://localhost:5001/api/riders/${id}`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/riders/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
@@ -287,7 +287,7 @@ function AdminDashboard() {
   };
 
   const fetchStoreAdmins = async () => {
-    const res = await fetch("http://localhost:5001/api/store-admins", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/store-admins", {
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
     if (res.ok) {
@@ -299,7 +299,7 @@ function AdminDashboard() {
   const createStoreAdmin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAddStoreAdminError("");
-    const res = await fetch("http://localhost:5001/api/store-admins", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/store-admins", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -331,7 +331,7 @@ function AdminDashboard() {
 
   const saveStoreAdmin = async () => {
     if (!editingStoreAdmin) return;
-    const res = await fetch(`http://localhost:5001/api/store-admins/${editingStoreAdmin.id}`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/store-admins/${editingStoreAdmin.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -348,7 +348,7 @@ function AdminDashboard() {
   const deleteStoreAdmin = async (id: number) => {
     setDeletingStoreAdminId(id);
     try {
-      const res = await fetch(`http://localhost:5001/api/store-admins/${id}`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/store-admins/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -375,7 +375,7 @@ function AdminDashboard() {
     setIsAddingStore(true);
     setAddStoreError("");
     try {
-      const res = await fetch("http://localhost:5001/api/stores", {
+      const res = await fetch("https://washing-3ntw.onrender.com/api/stores", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -408,7 +408,7 @@ function AdminDashboard() {
   const deleteStore = async (id: string) => {
     setDeletingStoreId(id);
     try {
-      const res = await fetch(`http://localhost:5001/api/stores/${id}`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/stores/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -429,7 +429,7 @@ function AdminDashboard() {
     if (!confirm("Are you sure you want to clear all store hubs? This will unassign store hubs from riders and admins.")) return;
     setIsClearingStores(true);
     try {
-      const res = await fetch("http://localhost:5001/api/stores/clear-all", {
+      const res = await fetch("https://washing-3ntw.onrender.com/api/stores/clear-all", {
         method: "DELETE",
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
@@ -447,7 +447,7 @@ function AdminDashboard() {
 
   const updateStatus = async (id: number, status: string) => {
     setUpdatingId(id);
-    const res = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/orders/${id}/status`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -461,7 +461,7 @@ function AdminDashboard() {
 
   const deleteOrder = async (id: number) => {
     setDeletingId(id);
-    const res = await fetch(`http://localhost:5001/api/orders/${id}`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/orders/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });
@@ -479,7 +479,7 @@ function AdminDashboard() {
 
   const saveCustomer = async () => {
     if (!editingCustomer) return;
-    const res = await fetch(`http://localhost:5001/api/customers/${editingCustomer.id}`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/customers/${editingCustomer.id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -495,7 +495,7 @@ function AdminDashboard() {
 
   const deleteCustomer = async (id: number) => {
     setDeletingCustomerId(id);
-    const res = await fetch(`http://localhost:5001/api/customers/${id}`, {
+    const res = await fetch(`https://washing-3ntw.onrender.com/api/customers/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
     });

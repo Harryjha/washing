@@ -55,7 +55,7 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
   const fetchOrderDetail = async () => {
     setFetching(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/orders/${orderId}`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/orders/${orderId}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       if (res.ok) {
@@ -70,7 +70,7 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
   const handleUpdateStatus = async (newStatus: string) => {
     setUpdating(true);
     try {
-      const res = await fetch(`http://localhost:5001/api/orders/${orderId}/status`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/orders/${orderId}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",

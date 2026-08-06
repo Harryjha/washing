@@ -53,7 +53,7 @@ function RiderDashboard() {
   const fetchOrders = async () => {
     setFetching(true);
     try {
-      const res = await fetch("http://localhost:5001/api/orders/rider/tasks", {
+      const res = await fetch("https://washing-3ntw.onrender.com/api/orders/rider/tasks", {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       if (res.ok) {
@@ -73,7 +73,7 @@ function RiderDashboard() {
     
     setUpdatingId(id);
     try {
-      const res = await fetch(`http://localhost:5001/api/orders/${id}/status`, {
+      const res = await fetch(`https://washing-3ntw.onrender.com/api/orders/${id}/status`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
