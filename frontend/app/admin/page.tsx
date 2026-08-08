@@ -23,6 +23,7 @@ type Order = {
   readyForDeliveryAt?: string;
   deliveredAt?: string;
   verificationCode?: string;
+  weight?: number | null;
 };
 
 type Customer = {
