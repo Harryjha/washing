@@ -737,7 +737,7 @@ export default function CustomerDashboard() {
   }, [user, loading]);
 
   const fetchOrders = async () => {
-    const res = await fetch("http://localhost:5000/api/orders/my-orders", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/orders/my-orders", {
       headers: { Authorization: \`Bearer \${localStorage.getItem("token")}\` }
     });
     if (res.ok) {
@@ -748,7 +748,7 @@ export default function CustomerDashboard() {
 
   const handleCreateOrder = async (e: any) => {
     e.preventDefault();
-    const res = await fetch("http://localhost:5000/api/orders", {
+    const res = await fetch("https://washing-3ntw.onrender.com/api/orders", {
       method: "POST",
       headers: { 
         "Content-Type": "application/json",

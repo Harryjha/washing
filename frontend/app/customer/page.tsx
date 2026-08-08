@@ -16,6 +16,7 @@ type Order = {
   pickupDate?: string;
   specialNote?: string;
   verificationCode?: string;
+  weight?: number | null;
   createdAt: string;
   rider?: { name: string; phone: string } | null;
 };
@@ -351,10 +352,18 @@ function CustomerDashboard() {
                         <span className="text-gray-400 uppercase font-bold block mb-0.5">Items</span>
                         <span className="font-semibold text-gray-800">{order.itemsDescription || "Garments"}</span>
                       </div>
-                      <div>
-                        <span className="text-gray-400 uppercase font-bold block mb-0.5">Pickup Address</span>
-                        <span className="font-semibold text-gray-800 truncate block">{order.pickupAddress}</span>
-                      </div>
+                      {order.weight ? (
+                        <div className="bg-primary/5 border border-primary/20 rounded-xl p-3 flex flex-col items-center justify-center">
+                          <span className="text-gray-400 uppercase font-bold block mb-1 text-[10px] tracking-wider">Total Weight</span>
+                          <span className="font-black text-primary text-2xl leading-none">{order.weight}</span>
+                          <span className="text-primary/70 text-[10px] font-bold mt-0.5">KG</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-gray-400 uppercase font-bold block mb-0.5">Weight</span>
+                          <span className="text-gray-400 italic text-xs">Pending pickup</span>
+                        </div>
+                      )}
                       <div>
                         <span className="text-gray-400 uppercase font-bold block mb-0.5">Pickup Date</span>
                         <span className="font-semibold text-gray-800">
@@ -439,6 +448,9 @@ function CustomerDashboard() {
                     <div>
                       <span className="font-mono font-bold text-primary">#{String(o.id).padStart(4, "0")}</span>
                       <span className="ml-2 font-semibold text-gray-800">{o.serviceType || "Laundry"}</span>
+                      {o.weight && (
+                        <span className="ml-2 inline-block bg-primary/10 text-primary px-2 py-0.5 rounded font-bold">{o.weight} kg</span>
+                      )}
                       <p className="text-gray-400 mt-0.5">{o.itemsDescription}</p>
                     </div>
                     <div className="text-right">

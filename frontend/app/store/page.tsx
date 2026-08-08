@@ -12,6 +12,7 @@ type OrderItem = {
   itemsDescription: string;
   pickupAddress: string;
   pickupDate?: string;
+  weight?: number | null;
   createdAt: string;
   customer: { id: number; name: string; email: string; phone?: string; address?: string };
   rider?: { id: number; name: string; email: string; phone?: string };
@@ -373,10 +374,13 @@ function StoreAdminDashboard() {
                             <p className="text-xs text-slate-400 truncate max-w-xs">{o.pickupAddress}</p>
                           </td>
                           <td className="px-6 py-4">
-                            <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-700 text-xs font-bold rounded-lg mb-1">
-                              {o.serviceType || "Laundry Service"}
-                            </span>
-                            <p className="text-xs text-slate-600 line-clamp-1">{o.itemsDescription}</p>
+                            <div>
+                              <span className="font-bold text-slate-800 text-sm flex items-center gap-2">
+                                {o.serviceType || "Laundry"}
+                                {o.weight && <span className="text-[10px] bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full">{o.weight} kg</span>}
+                              </span>
+                              <p className="text-xs text-slate-600 line-clamp-1">{o.itemsDescription}</p>
+                            </div>
                           </td>
                           <td className="px-6 py-4">
                             <span className="font-mono font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded border border-indigo-100">
@@ -527,9 +531,37 @@ function StoreAdminDashboard() {
                   </div>
 
                   <div>
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Items</span>
+                    <p className="text-sm text-slate-700">
+                      {selectedHistoryOrder.itemsDescription}
+                    </p>
+                  </div>
+
+                  {/* Weight Card */}
+                  {selectedHistoryOrder.weight ? (
+                    <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-indigo-400 uppercase tracking-wider">Total Weight</p>
+                        <p className="text-xs text-indigo-600 mt-0.5">Added by rider at pickup</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="font-black text-indigo-700 text-3xl">{selectedHistoryOrder.weight}</span>
+                        <span className="text-indigo-500 text-sm font-bold ml-1">kg</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3">
+                      <span className="material-symbols-outlined text-slate-400 text-lg">scale</span>
+                      <div>
+                        <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Weight</p>
+                        <p className="text-xs text-slate-400 italic">Not yet recorded — pending pickup</p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div>
                     <p className="text-xs text-slate-500 font-semibold mb-1">Service & Items</p>
                     <span className="inline-block px-2.5 py-0.5 bg-indigo-50 text-indigo-700 text-xs font-bold rounded-lg mb-1">{selectedHistoryOrder.serviceType}</span>
-                    <p className="text-sm text-slate-700">{selectedHistoryOrder.itemsDescription}</p>
                   </div>
                   
                   <div>
@@ -563,6 +595,11 @@ function StoreAdminDashboard() {
                             {new Date((selectedHistoryOrder as any).pickedUpAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
                           </p>
                           <p className="text-xs text-slate-600">Rider: {selectedHistoryOrder.rider?.name || 'Unknown'}</p>
+                          {selectedHistoryOrder.weight && (
+                            <p className="text-xs font-bold text-indigo-700 mt-1">
+                              ⚖️ Weight recorded: <span className="text-base">{selectedHistoryOrder.weight} kg</span>
+                            </p>
+                          )}
                         </>
                       ) : (
                         <p className="text-sm text-slate-400 italic">Pending...</p>

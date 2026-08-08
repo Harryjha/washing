@@ -19,6 +19,7 @@ type OrderTask = {
   pickupDate?: string;
   specialNote?: string;
   verificationCode?: string;
+  weight?: number | null;
   createdAt: string;
   customer: { name: string; phone?: string; email: string };
   store?: { name: string; address: string };
@@ -43,6 +44,7 @@ function RiderDashboard() {
   const [fetching, setFetching] = useState<boolean>(true);
   const [updatingId, setUpdatingId] = useState<number | null>(null);
   const [verificationCodeInputs, setVerificationCodeInputs] = useState<Record<number, string>>({});
+  const [weightInputs, setWeightInputs] = useState<Record<number, string>>({});
 
   useEffect(() => {
     if (user && (user.role === "RIDER" || user.role === "ADMIN")) {
@@ -65,7 +67,7 @@ function RiderDashboard() {
     }
   };
 
-  const updateStatus = async (id: number, status: string, code?: string) => {
+  const updateStatus = async (id: number, status: string, code?: string, weight?: string) => {
     if ((status === "DELIVERED" || status === "PICKED_UP") && (!code || code.length !== 4)) {
       alert("Please enter the 4-digit verification code provided by the customer.");
       return;
@@ -79,7 +81,7 @@ function RiderDashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ status, verificationCode: code }),
+        body: JSON.stringify({ status, verificationCode: code, weight }),
       });
       if (res.ok) {
         if (status === "DELIVERED") {
@@ -220,6 +222,12 @@ function RiderDashboard() {
                         {o.pickupLandmark && (
                           <p className="text-emerald-700 font-semibold text-[11px]">📍 Landmark: {o.pickupLandmark}</p>
                         )}
+                        {o.weight && (
+                          <p className="text-primary font-bold text-[11px]">
+                            <span className="material-symbols-outlined text-xs align-middle mr-0.5">scale</span>
+                            Total Weight: {o.weight} kg
+                          </p>
+                        )}
                         {o.store && (
                           <p className="text-gray-400 text-[11px]">Hub: <strong className="text-gray-700">{o.store.name}</strong></p>
                         )}
@@ -246,22 +254,42 @@ function RiderDashboard() {
                       </a>
 
                       {(o.status === "PENDING" || o.status === "PENDING_PICKUP") && (
-                        <div className="flex flex-1 items-center gap-2">
-                          <input
-                            type="text"
-                            maxLength={4}
-                            placeholder="Code"
-                            value={verificationCodeInputs[o.id] || ""}
-                            onChange={(e) => setVerificationCodeInputs({ ...verificationCodeInputs, [o.id]: e.target.value.replace(/\D/g, '') })}
-                            className="w-16 text-center border border-gray-300 rounded-xl py-2 text-sm font-mono font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-                          />
-                          <button
-                            onClick={() => updateStatus(o.id, "PICKED_UP", verificationCodeInputs[o.id])}
-                            disabled={updatingId === o.id || (verificationCodeInputs[o.id]?.length !== 4)}
-                            className="flex-1 bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
-                          >
-                            Confirm Pickup
-                          </button>
+                        <div className="flex flex-col w-full gap-2 mt-2">
+                          {o.serviceType !== "Dry Cleaning" && o.serviceType !== "Household Laundry" && (
+                            <input
+                              type="number"
+                              step="0.1"
+                              min="0"
+                              placeholder="Weight (kg)"
+                              value={weightInputs[o.id] || ""}
+                              onChange={(e) => setWeightInputs({ ...weightInputs, [o.id]: e.target.value })}
+                              className="w-full border border-gray-300 rounded-xl py-2 text-sm font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 px-3"
+                            />
+                          )}
+                          <div className="flex w-full items-center gap-2">
+                            <input
+                              type="text"
+                              maxLength={4}
+                              placeholder="Code"
+                              value={verificationCodeInputs[o.id] || ""}
+                              onChange={(e) => setVerificationCodeInputs({ ...verificationCodeInputs, [o.id]: e.target.value.replace(/\D/g, '') })}
+                              className="w-16 text-center border border-gray-300 rounded-xl py-2 text-sm font-mono font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                            />
+                            <button
+                              onClick={() => {
+                                const needsWeight = o.serviceType !== "Dry Cleaning" && o.serviceType !== "Household Laundry";
+                                if (needsWeight && !weightInputs[o.id]) {
+                                  alert("Please enter the weight in kg before confirming pickup.");
+                                  return;
+                                }
+                                updateStatus(o.id, "PICKED_UP", verificationCodeInputs[o.id], weightInputs[o.id]);
+                              }}
+                              disabled={updatingId === o.id || (verificationCodeInputs[o.id]?.length !== 4)}
+                              className="flex-1 bg-emerald-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+                            >
+                              Confirm Pickup
+                            </button>
+                          </div>
                         </div>
                       )}
 

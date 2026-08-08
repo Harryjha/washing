@@ -959,7 +959,7 @@ function AdminDashboard() {
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Auth Code</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Pickup</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Update</th>
+                        <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Weight</th>
                         <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-center">Delete</th>
                       </tr>
                     </thead>
@@ -995,9 +995,10 @@ function AdminDashboard() {
                               </div>
                             </td>
                             <td className="px-6 py-5">
-                              <span className="inline-block px-2.5 py-0.5 bg-surface-container-high text-on-surface text-[11px] font-bold rounded-lg border border-outline-variant/30 mb-1">
+                              <div className="font-bold text-on-surface text-sm flex items-center gap-2">
                                 {o.serviceType || "Laundry"}
-                              </span>
+                                {o.weight && <span className="text-[10px] bg-primary-container text-on-primary-container px-1.5 py-0.5 rounded-full">{o.weight} kg</span>}
+                              </div>
                               <p className="text-xs text-outline line-clamp-1 max-w-[140px]">{o.itemsDescription}</p>
                             </td>
                             <td className="px-6 py-5">
@@ -1012,28 +1013,17 @@ function AdminDashboard() {
                                   : "—"}
                               </span>
                             </td>
-                            <td className="px-6 py-5 max-w-[200px]">
-                              <span className="text-sm text-on-surface-variant truncate block">{o.pickupAddress || "—"}</span>
-                            </td>
                             <td className="px-6 py-5">
-                              <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tight ${STATUS_STYLES[o.status] || "bg-surface-variant text-on-surface-variant"}`}>
-                                {STATUS_LABEL[o.status] || o.status}
-                              </span>
-                            </td>
+                               <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-tight ${STATUS_STYLES[o.status] || "bg-surface-variant text-on-surface-variant"}`}>
+                                 {STATUS_LABEL[o.status] || o.status}
+                               </span>
+                             </td>
                             <td className="px-6 py-5 text-center">
-                              <select
-                                className={`text-xs font-semibold border border-outline-variant rounded-lg px-2 py-1.5 bg-surface-container-lowest focus:ring-2 focus:ring-primary outline-none transition-all ${updatingId === o.id ? "opacity-50 cursor-not-allowed" : ""}`}
-                                value={o.status}
-                                disabled={updatingId === o.id}
-                                onChange={(e) => updateStatus(o.id, e.target.value)}
-                              >
-                                <option value="PENDING">Pending</option>
-                                <option value="PICKED_UP">Picked Up</option>
-                                <option value="IN_WASHING">In Washing</option>
-                                <option value="READY_FOR_DELIVERY">Ready for Delivery</option>
-                                <option value="DELIVERED">Delivered</option>
-                                <option value="CANCELLED">Cancelled</option>
-                              </select>
+                              {o.weight ? (
+                                <span className="font-bold text-primary text-sm">{o.weight} <span className="text-xs font-medium text-on-surface-variant">kg</span></span>
+                              ) : (
+                                <span className="text-xs text-on-surface-variant italic">—</span>
+                              )}
                             </td>
                             <td className="px-6 py-5 text-center">
                               {deleteConfirmId === o.id ? (

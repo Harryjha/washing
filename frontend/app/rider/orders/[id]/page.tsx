@@ -17,6 +17,7 @@ type OrderDetail = {
   pickupLandmark?: string;
   pickupDate?: string;
   specialNote?: string;
+  weight?: number | null;
   createdAt: string;
   customer: { id: number; name: string; email: string; phone?: string; address?: string };
   store?: { name: string; address: string; latitude: number; longitude: number };
@@ -43,6 +44,8 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
   const [order, setOrder] = useState<OrderDetail | null>(null);
   const [fetching, setFetching] = useState<boolean>(true);
   const [updating, setUpdating] = useState<boolean>(false);
+  const [verificationCode, setVerificationCode] = useState<string>("");
+  const [weight, setWeight] = useState<string>("");
 
   useEffect(() => {
     if (!loading && !user) router.push("/");
@@ -68,6 +71,17 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
   };
 
   const handleUpdateStatus = async (newStatus: string) => {
+    if ((newStatus === "DELIVERED" || newStatus === "PICKED_UP") && verificationCode.length !== 4) {
+      alert("Please enter the 4-digit verification code provided by the customer.");
+      return;
+    }
+
+    const needsWeight = order && order.serviceType !== "Dry Cleaning" && order.serviceType !== "Household Laundry";
+    if (newStatus === "PICKED_UP" && needsWeight && !weight) {
+      alert("Please enter the weight in kg before confirming pickup.");
+      return;
+    }
+
     setUpdating(true);
     try {
       const res = await fetch(`https://washing-3ntw.onrender.com/api/orders/${orderId}/status`, {
@@ -76,7 +90,7 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
           "Content-Type": "application/json",
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ status: newStatus, verificationCode, weight }),
       });
       if (res.ok) {
         fetchOrderDetail();
@@ -257,6 +271,13 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
               <span className="font-bold text-gray-900 text-sm">{order.itemsDescription}</span>
             </div>
 
+            {order.weight && (
+              <div className="bg-primary/5 p-4 rounded-2xl border border-primary/10">
+                <span className="text-gray-400 font-bold uppercase block mb-1">Total Weight</span>
+                <span className="font-black text-primary text-xl">{order.weight} <span className="text-sm font-bold">kg</span></span>
+              </div>
+            )}
+
             <div className="bg-gray-50 p-4 rounded-2xl">
               <span className="text-gray-400 font-bold uppercase block mb-1">Special Instructions</span>
               <span className="font-semibold text-gray-800">
@@ -285,13 +306,36 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
             )}
 
             {(order.status === "PENDING_PICKUP" || order.status === "RIDER_ASSIGNED") && (
-              <button
-                onClick={() => handleUpdateStatus("PICKED_UP")}
-                disabled={updating}
-                className="w-full bg-emerald-600 text-white font-bold text-xs py-3.5 rounded-2xl shadow-md hover:bg-emerald-700 transition-all disabled:opacity-50"
-              >
-                ✓ Clothes Picked Up
-              </button>
+              <div className="col-span-1 sm:col-span-3 flex flex-col gap-3">
+                {order.serviceType !== "Dry Cleaning" && order.serviceType !== "Household Laundry" && (
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="Total Weight (kg)"
+                    value={weight}
+                    onChange={(e) => setWeight(e.target.value)}
+                    className="w-full border border-gray-300 rounded-xl py-3 px-4 text-sm font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                )}
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <input
+                    type="text"
+                    maxLength={4}
+                    placeholder="Customer 4-Digit Code"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                    className="w-full sm:w-auto flex-1 text-center border border-gray-300 rounded-xl py-3 px-4 text-sm font-mono font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                  />
+                  <button
+                    onClick={() => handleUpdateStatus("PICKED_UP")}
+                    disabled={updating || verificationCode.length !== 4}
+                    className="w-full sm:w-auto flex-1 bg-emerald-600 text-white font-bold text-sm py-3 px-4 rounded-xl shadow-md hover:bg-emerald-700 transition-all disabled:opacity-50"
+                  >
+                    ✓ Confirm Pickup
+                  </button>
+                </div>
+              </div>
             )}
 
             {order.status === "PICKED_UP" && (
@@ -309,13 +353,23 @@ export default function RiderOrderNavigation({ params }: { params: Promise<{ id:
             )}
 
             {order.status === "READY_FOR_DELIVERY" && (
-              <button
-                onClick={() => handleUpdateStatus("DELIVERED")}
-                disabled={updating}
-                className="w-full bg-emerald-600 text-white font-bold text-xs py-3.5 rounded-2xl shadow-md hover:bg-emerald-700 transition-all disabled:opacity-50"
-              >
-                ✓ Mark Order Delivered
-              </button>
+              <div className="col-span-1 sm:col-span-3 flex flex-col sm:flex-row gap-3">
+                <input
+                  type="text"
+                  maxLength={4}
+                  placeholder="Customer 4-Digit Code"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
+                  className="w-full sm:w-auto flex-1 text-center border border-gray-300 rounded-xl py-3 px-4 text-sm font-mono font-bold outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
+                />
+                <button
+                  onClick={() => handleUpdateStatus("DELIVERED")}
+                  disabled={updating || verificationCode.length !== 4}
+                  className="w-full sm:w-auto flex-1 bg-emerald-600 text-white font-bold text-sm py-3 px-4 rounded-xl shadow-md hover:bg-emerald-700 transition-all disabled:opacity-50"
+                >
+                  ✓ Mark Order Delivered
+                </button>
+              </div>
             )}
           </div>
         </div>

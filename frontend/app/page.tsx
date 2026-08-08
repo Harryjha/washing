@@ -199,103 +199,95 @@ function HomeContent() {
       </nav>
 
       {/* ─── Hero ─── */}
-      <header className="relative overflow-hidden bg-surface">
-        <div className="relative min-h-screen flex items-center">
-          {/* Background image */}
-          <div className="absolute inset-0 z-0">
-            <img
-              alt="Laundry background"
-              className="w-full h-full object-cover object-center"
-              src="/colour.png"
-            />
-            <div className="absolute inset-0 bg-black/40" />
-          </div>
+      <header className="relative overflow-hidden" style={{ minHeight: "calc(100vh - 80px)" }}>
+        {/* Full-screen background image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            alt="Laundry background"
+            className="w-full h-full object-cover object-center"
+            src="/colour.png"
+          />
+          <div className="absolute inset-0 bg-black/50" />
+        </div>
 
-          {/* Hero content */}
-          <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-20 w-full">
-            <div className="max-w-2xl space-y-8">
-              <h1 className="text-white text-[48px] md:text-[64px] leading-[1.1] font-extrabold uppercase tracking-tight">
-                <div>
-                  <span style={{ letterSpacing: "-0.025em" }}>
-                    WE&apos;LL HANDLE THE LAUNDRY.
-                  </span>
-                </div>
-                <span className="text-primary-container">YOU ENJOY YOUR DAY</span>
-              </h1>
+        {/* Hero content */}
+        <div className="relative z-10 max-w-[1200px] mx-auto px-6 py-10 w-full flex items-center" style={{ minHeight: "calc(100vh - 80px)" }}>
+          <div className="w-full max-w-xl space-y-5">
+            <h1 className="text-white text-[38px] md:text-[52px] leading-[1.1] font-extrabold uppercase tracking-tight">
+              WE&apos;LL HANDLE THE LAUNDRY.<br/>
+              <span className="text-primary-container">YOU ENJOY YOUR DAY</span>
+            </h1>
 
-              <p className="text-xl md:text-2xl font-bold uppercase flex flex-wrap gap-x-2">
-                <span style={{ color: "rgb(0, 0, 139)" }}>WASH,</span>
-                <span style={{ color: "rgb(174, 45, 197)" }}>DRY,</span>
-                <span style={{ color: "rgb(233, 30, 99)" }}>FOLD,</span>
-                <span style={{ color: "rgb(255, 87, 34)" }}>STEAMPRESS.</span>
-              </p>
+            <p className="text-lg md:text-xl font-bold uppercase flex flex-wrap gap-x-3">
+              <span className="text-[#27c0fd]">WASH,</span>
+              <span className="text-[#f472b6]">DRY,</span>
+              <span className="text-[#fb923c]">FOLD,</span>
+              <span className="text-[#34d399]">STEAMPRESS.</span>
+            </p>
 
-              {/* Dynamic Quick-book Pill — Premium UI */}
-              <form onSubmit={handleHeroSubmit} className="relative w-full max-w-xl">
-                <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-2xl p-1 shadow-2xl">
-                  <div className="bg-white rounded-xl overflow-hidden">
-                    {/* Date Row */}
-                    <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-primary text-[20px]">calendar_today</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.12em] mb-0.5">
-                          Pickup Date
-                        </label>
-                        <input
-                          type="date"
-                          value={heroDate}
-                          onChange={(e) => setHeroDate(e.target.value)}
-                          min={new Date().toISOString().split("T")[0]}
-                          className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none cursor-pointer"
-                        />
-                      </div>
+            {/* Value Propositions */}
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary-container text-xl">local_shipping</span>
+                <span className="text-xs font-semibold text-white/80">Free Pickup & Delivery</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary-container text-xl">schedule</span>
+                <span className="text-xs font-semibold text-white/80">24h Turnaround</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-primary-container text-xl">eco</span>
+                <span className="text-xs font-semibold text-white/80">Eco-Friendly</span>
+              </div>
+            </div>
+
+            {/* Booking Form Card */}
+            <div className="glass-card rounded-2xl p-6 shadow-2xl">
+              <div className="mb-4">
+                <h2 className="text-lg font-bold text-on-surface">Schedule a Pickup</h2>
+                <p className="text-xs text-on-surface-variant mt-0.5">Book your laundry service in seconds.</p>
+              </div>
+              <form onSubmit={handleHeroSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex flex-col">
+                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5" htmlFor="pickup-date">Pickup Date</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-outline text-base">calendar_today</span>
                     </div>
-                    {/* Address Row */}
-                    <div className="flex items-center gap-3 px-4 py-3">
-                      <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                        <span className="material-symbols-outlined text-primary text-[20px]">location_on</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <label className="block text-[9px] font-black text-gray-400 uppercase tracking-[0.12em] mb-0.5">
-                          Pickup Address
-                        </label>
-                        <input
-                          type="text"
-                          placeholder="Enter your street & area"
-                          value={heroAddress}
-                          onChange={(e) => setHeroAddress(e.target.value)}
-                          className="w-full text-sm font-bold text-gray-900 bg-transparent outline-none placeholder:text-gray-300 placeholder:font-normal"
-                        />
-                      </div>
-                    </div>
+                    <input
+                      className="pl-10 block w-full border border-outline-variant rounded-xl focus:ring-primary focus:border-primary text-sm py-2.5 px-3 shadow-sm bg-surface-container-lowest outline-none"
+                      id="pickup-date"
+                      type="date"
+                      value={heroDate}
+                      onChange={(e) => setHeroDate(e.target.value)}
+                      min={new Date().toISOString().split("T")[0]}
+                    />
                   </div>
-
-                  {/* Submit button inside pill */}
-                  <button
-                    type="submit"
-                    className="mt-1 w-full bg-primary hover:bg-primary/90 active:scale-[0.98] text-white font-bold text-sm rounded-xl h-12 flex items-center justify-center gap-2 transition-all shadow-lg"
-                  >
-                    <span>Book My Pickup</span>
-                    <span className="material-symbols-outlined text-[20px]">arrow_forward</span>
-                  </button>
                 </div>
-
-                {/* Trust badges below form */}
-                <div className="flex items-center gap-4 mt-4 px-1">
-                  <span className="flex items-center gap-1.5 text-white/80 text-[11px] font-semibold">
-                    <span className="material-symbols-outlined text-emerald-400 text-base">verified</span>
-                    Free Pickup
-                  </span>
-                  <span className="flex items-center gap-1.5 text-white/80 text-[11px] font-semibold">
-                    <span className="material-symbols-outlined text-amber-400 text-base">bolt</span>
-                    24h Turnaround
-                  </span>
-                  <span className="flex items-center gap-1.5 text-white/80 text-[11px] font-semibold">
-                    <span className="material-symbols-outlined text-sky-400 text-base">lock</span>
-                    Secure & Tracked
-                  </span>
+                <div className="flex flex-col">
+                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5" htmlFor="pickup-address">Pickup Address</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span className="material-symbols-outlined text-outline text-base">location_on</span>
+                    </div>
+                    <input
+                      className="pl-10 block w-full border border-outline-variant rounded-xl focus:ring-primary focus:border-primary text-sm py-2.5 px-3 shadow-sm placeholder:text-outline bg-surface-container-lowest outline-none"
+                      id="pickup-address"
+                      placeholder="Street & area"
+                      type="text"
+                      value={heroAddress}
+                      onChange={(e) => setHeroAddress(e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="md:col-span-2">
+                  <button
+                    className="w-full flex justify-center items-center py-3 px-6 border border-transparent rounded-xl shadow-md text-sm font-bold text-on-primary bg-primary-container hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors cursor-pointer"
+                    type="submit"
+                  >
+                    Book My Pickup
+                    <span className="material-symbols-outlined ml-2 text-lg">arrow_forward</span>
+                  </button>
                 </div>
               </form>
             </div>
