@@ -54,6 +54,7 @@ model Order {
   store            Store?      @relation("StoreOrders", fields: [storeId], references: [id])
   status           OrderStatus @default(PENDING_PICKUP)
   totalAmount      Float       @default(0)
+  weight           Float?
   serviceType      String?
   itemsDescription String
   pickupAddress    String

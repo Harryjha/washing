@@ -121,11 +121,12 @@ async function getRiderTasks(req, res) {
 async function updateOrderStatus(req, res) {
   try {
     const { id } = req.params;
-    const { status, riderId, verificationCode } = req.body;
+    const { status, riderId, verificationCode, weight } = req.body;
 
     const dataToUpdate = {};
     if (status) dataToUpdate.status = status;
     if (riderId !== undefined) dataToUpdate.riderId = riderId ? Number(riderId) : req.user.id;
+    if (weight !== undefined && weight !== null) dataToUpdate.weight = parseFloat(weight);
 
     // Automatically set riderId when rider accepts task
     if (req.user.role === 'RIDER' && !dataToUpdate.riderId && status !== 'DELIVERED') {
